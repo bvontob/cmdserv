@@ -1,0 +1,29 @@
+
+1
+1 2
+1 2 3
+1 2 3 4
+1 2 3 4 5
+"quoted with" "space characters"
+    ignore    "leading and trailing"    spaces    
+    "  but not in a quoted string  "    
+escaped\ space
+\"\e\s\c\a\p\e\d\ \e\v\e\r\y\t\i\n\g\"
+single \  space
+\  "single escaped space at beginning and end" \ 
+hello "\"world\"!"
+hello '"world"!'
+It "ain't" wrong!
+It 'ain\'t' wrong!
+  " ' " ' " ' 
+"--- Some borderline cases follow ---"
+"Escape at end silently ignored" \
+"Unterminated string" "silently ignored
+"Silently concatenate quoted strings""_""without spaces"
+ab"cd" ef
+ab "cd"ef
+ab"cd"ef
+"ab""cd" "ef"
+"ab" "cd""ef"
+"ab""cd""ef"
+'ab'"cd" 'ef'

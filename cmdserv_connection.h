@@ -1,0 +1,446 @@
+/**
+ * @file cmdserv_connection.h
+ *
+ * The object representing one client connection.
+ *
+ * @author    Beat Vontobel <b.vontobel@meteonews.ch>
+ * @version   0.9.0
+ * @copyright 2014, MeteoNews AG, Beat Vontobel
+ *
+ * @section DESCRIPTION
+ *
+ *     XXX
+ *
+ * @section LICENSE
+ *
+ *     This program is free software; you can redistribute it and/or
+ *     modify it under the terms of the GNU General Public License as
+ *     published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *                                                                                 
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *                                                                                 
+ *     You should have received a copy of the GNU General Public
+ *     License along with this program; if not, write to the Free
+ *     Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *     Boston, MA 02110-1301, USA.
+ *
+ * @see cmdserv.h cmdserv_logger.h
+ */
+
+#ifndef CMDSERV_CONNECTION_H
+#define CMDSERV_CONNECTION_H
+
+#include <stdarg.h>
+#include <sys/types.h>
+
+#include "cmdserv_logger.h"
+struct cmdserv_connection_config;
+
+
+/**
+ * The buffer size per client connection.
+ *
+ * One command must fit into the buffer completely. Thus, this setting
+ * limits the maximum length of a command in octets (including the
+ * line terminators).
+ *
+ * @todo Rename to CMDSERV_CONNECTION_READBUF_SIZE or better yet make
+ *     it dynamically adjustable.
+ */
+#define READBUF_SIZE 1024
+
+
+/**
+ * The maximum number of arguments a command may consist of.
+ *
+ * The command itself counts as an argument (arg0), thus ARGC_MAX
+ * should be set to 3 to parse a command like "command arg1 arg2".
+ *
+ * @todo Rename to CMDSERV_CONNECTION_ARGC_MAX or better yet make it
+ *     dynamically adjustable.
+ */
+#define ARGC_MAX 8
+
+
+/**
+ * Configure end-of-line character modes.
+ *
+ * @todo
+ *
+ *     Further modes could be added if needed: CMDSERV_LINETERM_CR for
+ *     lone CRs (used e.g. on Macs before OS X), and strict modes
+ *     CMDSERV_LINETERM_LF_STRICT, CMDSERV_LINETERM_CRLF_STRICT, and
+ *     CMDSERV_LINETERM_CR_STRICT. The strict modes would regard any
+ *     CR or LF character that's not part of a legal line termination
+ *     (and probably also other similar whitespace such as TAB, VTAB,
+ *     FF... and maybe all non-printable characters) as a protocol
+ *     violation and reject the complete line.
+ */
+enum cmdserv_lineterm {
+  /**
+   * Lines are LF terminated.
+   *
+   * In this mode only LF characters are regarded as special and
+   * treated as end-of-line characters.  CRs (be it lone or in a
+   * CR-LF-sequence) will be completely ignored by the end-of-line
+   * detection and treated as any other non-special character would.
+   *
+   * Thus a line terminated by a CR-LF-sequence will end in a lone CR
+   * after stripping of the LF.  The default command tokenizer will
+   * treat the CR as arbitrary white space at the end of the line and
+   * silently strip it on tokenization in most cases (thus this mode
+   * is quite similar to CMDSERV_LINETERM_LF_OR_CRLF in these cases),
+   * in raw line mode though, the handler will get to see the CR (and
+   * is thus able to detect if a line was ended by LF or by CRLF).
+   */
+  CMDSERV_LINETERM_LF,
+
+  /**
+   * Lines are terminated by LF or CRLF.
+   *
+   * In this mode the line parser will accept a lone LF as line
+   * termination as well as a CR-LF-sequence.  Both will be cut off.
+   * The information on what terminated the line will be lost even for
+   * raw line mode.
+   */
+  CMDSERV_LINETERM_LF_OR_CRLF,
+
+  /**
+   * Lines are terminated by CRLF.
+   *
+   * Only a sequence of a CR character directly followed by an LF
+   * character will be treated as the end of a line.  All other CR or
+   * LF characters appearing in the stream will be completely ignored
+   * by the end-of-line detection and handed through to the command
+   * tokenizer or directly to the handler (in raw line mode)
+   * unchanged.
+   */
+  CMDSERV_LINETERM_CRLF,
+};
+
+
+/**
+ * The object representing one active client connection.
+ */
+typedef struct cmdserv_connection cmdserv_connection;
+
+
+/**
+ * Accept a new client connection from a listener.
+ *
+ * This is the constructor for cmdserv connection objects.  Normal
+ * users of the library should never have to use it, as the cmdserv
+ * main server object takes care of this.  It can be used however to
+ * wrap a different main server around just the connection object.
+ *
+ * Will return NULL on any failure with errno set by an underlying
+ * library.
+ *
+ * @param listener_fd
+ *
+ *     The file descriptor of the listener socket with the pending
+ *     client connection to be accepted.
+ *
+ * @param conn_id
+ *
+ *     A unique connection ID to identify this connection.  It will be
+ *     used in logging output and in the close_handler callback to
+ *     inform the user of this method again when this connection has
+ *     been closed.
+ *
+ * @param config
+ *
+ *      A cmdserv_connection_config object defining the connection
+ *      parameters, including the callbacks.
+ *
+ * @return The newly created client connection or NULL on failure.
+ *
+ * @see cmdserv_connection_config
+ */
+cmdserv_connection
+*cmdserv_connection_create(int listener_fd,
+                           unsigned long long int conn_id,
+                           struct cmdserv_connection_config* config);
+
+
+/**
+ * Close a client connection.
+ *
+ * @param connection
+ *
+ *     The connection to be closed.
+ */
+void cmdserv_connection_close(cmdserv_connection* connection);
+
+
+/**
+ * Log a connection-related event.
+ *
+ * This logging method is analogous to cmdserv_log() but should be
+ * used instead of it for events regarding a specific client
+ * connection (as opposed to server-wide events).  The logged message
+ * will automatically be enriched with information identifying the
+ * connection in question.
+ * 
+ * @see cmdserv_connection_vlog() cmdserv_logseverity cmdserv_log()
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to which the logged event
+ *     applies.  Connection information will automatically be added to
+ *     the head of the logged message.
+ *
+ * @param severity
+ *
+ *     The severity level for the logged event.
+ *
+ * @param fmt
+ *
+ *     The following arguments are the human readable message in
+ *     sprintf() format.
+ */
+void cmdserv_connection_log(cmdserv_connection* connection,
+                            enum cmdserv_logseverity severity,
+                            const char *fmt, ...);
+
+/**
+ * Log a connection-related event, va_list version.
+ * 
+ * @see cmdserv_connection_log() cmdserv_logseverity cmdserv_log()
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to which the logged event
+ *     applies.  Connection information will automatically be added to
+ *     the head of the logged message.
+ *
+ * @param severity
+ *
+ *     The severity level for the logged event.
+ *
+ * @param fmt
+ *
+ *     Message format in sprintf() format.
+ *
+ * @param ap
+ *
+ *     Arguments to format.
+ */
+void cmdserv_connection_vlog(cmdserv_connection* connection,
+                             enum cmdserv_logseverity severity,
+                             const char *fmt, va_list ap);
+
+
+/**
+ * Send a status line on this connection.
+ *
+ * Status lines are of the format "nnn Message\r\n" where "nnn" is a
+ * three-digit numerical code and "Message" is a short human-readable
+ * description for the numerical code.
+ *
+ * This method takes the numerical code separately from the rest of
+ * the message (which can be formatted with built-in sprintf()
+ * functionality), appends the CR-LF-sequence automatically, and sends
+ * the status line down the given connection to the client.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object through which the status line
+ *     should be sent.
+ *
+ * @param status
+ *
+ *     A three-digit integer status value between 100 and 999. The
+ *     definition of status codes is up to the user of this library,
+ *     but often status codes as used for many Internet protocols with
+ *     2xx being success codes, 4xx being client-error codes, and 5xx
+ *     being server-error codes are a good starting point.
+ *
+ * @param fmt
+ *
+ *     Further arguments are the human-readable part of the status
+ *     line in sprintf() format. A CR-LF-sequence ("\r\n") is
+ *     automatically appended and should not be added to the string.
+ */
+void cmdserv_connection_send_status(cmdserv_connection* connection,
+                                    int status,
+                                    const char *fmt, ...);
+
+
+/**
+ * Write nbyte bytes from the buffer pointed to by buf.
+ *
+ * This method behaves excactly like your system's write() call, with
+ * the only exception being the first argument: A cmdserv connection
+ * object instead of a file descriptor.  Refer to your system's
+ * write() documentation for further details and semantics.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to write on.
+ *
+ * @param buf
+ *
+ *     Pointer to the data buffer from which to write.
+ *
+ * @param nbyte
+ *
+ *     Number of bytes to write.
+ *
+ * @return The number of bytes actually written or -1 for errors.
+ */
+ssize_t cmdserv_connection_write(cmdserv_connection* connection,
+                                 const void *buf,
+                                 size_t nbyte);
+
+
+/**
+ * Write a zero-terminated string to the connection.
+ *
+ * The string will be written without the terminating zero and without
+ * a line break.
+ *
+ * @see cmdserv_connection_println() cmdserv_connection_printf()
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to write on.
+ *
+ * @param str
+ *
+ *     A zero-terminated string to write.
+ */
+void cmdserv_connection_print(cmdserv_connection* connection,
+                              const char *str);
+
+
+/**
+ * Write a zero-terminated string followed by a line break.
+ *
+ * A standard network line terminator (CR-LF-sequence) will
+ * automatically be appended to the string when being sent on the
+ * client connection.
+ *
+ * @see cmdserv_connection_print() cmdserv_connection_printf()
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to write on.
+ *
+ * @param str
+ *
+ *     A zero-terminated string to write.
+ */
+void cmdserv_connection_println(cmdserv_connection* connection,
+                                const char *str);
+
+
+/**
+ * Write a formatted string to the connection.
+ *
+ * @see cmdserv_connection_print() cmdserv_connection_println()
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to write on.
+ *
+ * @param fmt
+ *
+ *     The following arguments are exactly as for your systems
+ *     printf().
+ */
+void cmdserv_connection_printf(cmdserv_connection* connection,
+                               const char *fmt, ...);
+
+
+/**
+ * Retrieve the file descriptor for this connection.
+ *
+ * External users of the library should probably prefer the intended
+ * methods to communicate with the other end of a connection,
+ * especially for reading, as you might mess up the internal parser
+ * state otherwise.  In some circumstances it might be helpful to have
+ * access to the raw file descriptor though for writing (to e.g. hand
+ * it over to somebody else), even if a wrapper in between would
+ * probably be the cleaner solution.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object for which to retrieve the socket
+ *     file descriptor.
+ *
+ * @return A socket file descriptor.
+ */
+int cmdserv_connection_fd(cmdserv_connection* connection);
+
+
+/**
+ * Retrieve the connection ID for this connection.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object for which to retrieve the
+ *     connection ID.
+ *
+ * @return The unique (per server) connection ID.
+ */
+unsigned long long int cmdserv_connection_id(cmdserv_connection* connection);
+
+
+/**
+ * Retrieve human-readable client information for this connection.
+ *
+ * Returns the client address (IP and/or hostname plus port) of the
+ * given connection as a human readable string for logging, debugging,
+ * error messages, and the like.  No assumption about the format
+ * should be made (do not parse this information).
+ *
+ * The storage for the string pointed to by the return value is
+ * allocated dynamically by this method. You need to call free() on
+ * the pointer after you're done using it.
+ *
+ * Returns NULL on failure.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object for which to retrieve the
+ *     client information.
+ *
+ * @return Pointer to client info string (must be free()'d) or NULL.
+ */
+char *cmdserv_connection_client(cmdserv_connection* connection);
+
+
+/**
+ * Trigger a read on the connection.
+ *
+ * A call to this method will read available data from the client
+ * connection into the internal buffer and parse (and execute through
+ * the callback) a command if possible (i.e. if a completed command
+ * becomes available throughout this read operation).
+ *
+ * Normal users of the library should never have to call this method:
+ * The main cmdserv server object takes care of this.  The method is
+ * exposed to be used by cmdserv, for testing, and for users with
+ * special needs who want to use the connection object from a
+ * different server.
+ *
+ * Note that a connection might be closed (and the cmdserv_connection
+ * object free()'d!) while in this method.  You should be notified of
+ * that through the close_handler() callback.  Make sure this ensures
+ * that your code will really get rid of all references to the
+ * connection object and will not call anything on it in that case.
+ *
+ * @see cmdserv
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to read from.
+ */
+void cmdserv_connection_read(cmdserv_connection* connection);
+
+#endif /* CMDSERV_CONNECTION_H */

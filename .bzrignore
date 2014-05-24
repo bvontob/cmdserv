@@ -1,0 +1,5 @@
+test_cmdserv_tokenize
+test_cmdserv_tokenize.out
+test_cmdserv
+minimal_cmdserv
+doc/*

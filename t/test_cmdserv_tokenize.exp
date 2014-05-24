@@ -1,0 +1,87 @@
+in:  []
+out: 
+
+in:  [1]
+out: [1]
+
+in:  [1 2]
+out: [1][2]
+
+in:  [1 2 3]
+out: [1][2][3]
+
+in:  [1 2 3 4]
+out: Too many arguments
+
+in:  [1 2 3 4 5]
+out: Too many arguments
+
+in:  ["quoted with" "space characters"]
+out: [quoted with][space characters]
+
+in:  [    ignore    "leading and trailing"    spaces    ]
+out: [ignore][leading and trailing][spaces]
+
+in:  [    "  but not in a quoted string  "    ]
+out: [  but not in a quoted string  ]
+
+in:  [escaped\ space]
+out: [escaped space]
+
+in:  [\"\e\s\c\a\p\e\d\ \e\v\e\r\y\t\i\n\g\"]
+out: ["escaped everyting"]
+
+in:  [single \  space]
+out: [single][ ][space]
+
+in:  [\  "single escaped space at beginning and end" \ ]
+out: [ ][single escaped space at beginning and end][ ]
+
+in:  [hello "\"world\"!"]
+out: [hello]["world"!]
+
+in:  [hello '"world"!']
+out: [hello]["world"!]
+
+in:  [It "ain't" wrong!]
+out: [It][ain't][wrong!]
+
+in:  [It 'ain\'t' wrong!]
+out: [It][ain't][wrong!]
+
+in:  [  " ' " ' " ' ]
+out: [ ' ][ " ]
+
+in:  ["--- Some borderline cases follow ---"]
+out: [--- Some borderline cases follow ---]
+
+in:  ["Escape at end silently ignored" \]
+out: [Escape at end silently ignored]
+
+in:  ["Unterminated string" "silently ignored]
+out: [Unterminated string][silently ignored]
+
+in:  ["Silently concatenate quoted strings""_""without spaces"]
+out: [Silently concatenate quoted strings_without spaces]
+
+in:  [ab"cd" ef]
+out: [abcd][ef]
+
+in:  [ab "cd"ef]
+out: [ab][cdef]
+
+in:  [ab"cd"ef]
+out: [abcdef]
+
+in:  ["ab""cd" "ef"]
+out: [abcd][ef]
+
+in:  ["ab" "cd""ef"]
+out: [ab][cdef]
+
+in:  ["ab""cd""ef"]
+out: [abcdef]
+
+in:  ['ab'"cd" 'ef']
+out: [abcd][ef]
+
