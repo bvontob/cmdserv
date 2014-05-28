@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -67,6 +68,9 @@ struct cmdserv_connection {
   socklen_t clientaddrlen;        /**< size of client IP address/port */
   char clienthost[256];           /**< client address as string       */
   char clientport[128];           /**< client port as string          */
+
+  time_t time_connect;            /**< when the client connected      */
+  time_t time_last;               /**< when the client last talked    */
 
   char buf[READBUF_SIZE];         /**< data read buffer               */
   size_t buflen;                  /**< current length of read buffer  */
@@ -230,6 +234,8 @@ void cmdserv_connection_read(cmdserv_connection* self) {
     return;
   }
 
+  self->time_last = time(NULL);
+
   self->buflen += received;
 
   for (size_t i = oldbuflen; i < self->buflen; i++) {
@@ -311,6 +317,8 @@ cmdserv_connection
     .clientaddrlen = sizeof(((struct cmdserv_connection *)NULL)->clientaddr),
     .clienthost    = { '\0' },
     .clientport    = { '\0' },
+    .time_connect  = time(NULL),
+    .time_last     = time(NULL),
     .buflen        = 0,
     .overflow      = false,
     .argv          = { NULL },

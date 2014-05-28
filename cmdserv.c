@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -19,11 +20,13 @@
 
 struct cmdserv {
   int connections_max;
-  fd_set fds;       /* socket file descriptor list        */
-  int    listener;  /* listening socket file descriptor   */
-  int    fdmax;     /* maximum file descriptor number     */
-  unsigned long long int conns;    /* number of connections handled      */
+  fd_set fds;                      /**< socket file descriptor list        */
+  int    listener;                 /**< listening socket file descriptor   */
+  int    fdmax;                    /**< maximum file descriptor number     */
+  unsigned long long int conns;    /**< number of connections handled      */
   struct cmdserv_connection_config connection_config;
+
+  time_t time_start;
 
   void (*log_handler)(void *log_object,
                       enum cmdserv_logseverity severity,
@@ -155,6 +158,7 @@ cmdserv* cmdserv_start(struct cmdserv_config config) {
     .listener          = -1,
     .fdmax             = 0,
     .conns             = 0,
+    .time_start        = time(NULL),
     .log_handler       = config.log_handler,
     .log_object        = config.log_object,
     .connections_max   = config.connections_max,
