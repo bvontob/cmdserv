@@ -6,7 +6,8 @@ OBJS   := cmdserv_tokenize.o          \
 	  cmdserv_connection.o        \
 	  cmdserv.o
 CFLAGS := -Wall -Wextra -pedantic -Werror \
-	  -std=c99 -D_POSIX_C_SOURCE=200809L
+	  -std=c99 -D_POSIX_C_SOURCE=200809L \
+          -fstack-protector-all
 TESTS  := t/test_cmdserv_tokenize \
           t/test-cmdserv-helpers  \
           t/minimal_cmdserv       \
