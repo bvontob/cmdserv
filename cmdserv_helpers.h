@@ -39,9 +39,11 @@
  * duration), or "-2d 14:23:15" (negative duration, end before begin).
  * No units larger than days will be used.
  *
- * This function is not re-entrant.  The buffer for the returned
- * string is statically allocated.  Do not call free() on it.  And
- * note that it will be overwritten by the next call to this function.
+ * This function is not re-entrant (it does not interfere with any
+ * other use of functions from time.h, though).  The buffer for the
+ * returned string is statically allocated.  Do not call free() on it.
+ * And note that it will be overwritten by the next call to this
+ * function.
  *
  * @param begin
  *
