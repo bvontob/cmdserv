@@ -1,5 +1,7 @@
 test_cmdserv_tokenize
 test_cmdserv_tokenize.out
+test-cmdserv-helpers
+test-cmdserv-helpers.out
 test_cmdserv
 minimal_cmdserv
 doc/*
