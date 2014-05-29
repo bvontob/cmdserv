@@ -16,7 +16,7 @@
 #include <arpa/inet.h>
 
 #include "cmdserv.h"
-
+#include "cmdserv_helpers.h"
 
 struct cmdserv {
   int connections_max;
@@ -82,12 +82,16 @@ char *cmdserv_server_status(cmdserv* self,
                "===========================================================%s"
                "SERVER STATUS%s"
                "===========================================================%s"
+               "server uptime:       %s%s"
                "connections handled: %llu%s"
+               "connections/sec:     %.2f%s"
                "===========================================================%s"
                "slot  connection fd    client%s"
                "===== ========== ===== ====================================%s",
                lt, lt, lt,
+               cmdserv_duration_str(self->time_start, time(NULL)), lt,
                self->conns, lt,
+               (double)self->conns / (double)(time(NULL) + 1 - self->time_start), lt,
                lt, lt, lt)
       == -1) {
     free(tmp);
