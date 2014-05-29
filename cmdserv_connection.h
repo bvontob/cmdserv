@@ -36,6 +36,7 @@
 
 #include <stdarg.h>
 #include <sys/types.h>
+#include <time.h>
 
 #include "cmdserv_logger.h"
 struct cmdserv_connection_config;
@@ -389,6 +390,32 @@ int cmdserv_connection_fd(cmdserv_connection* connection);
  * @return The unique (per server) connection ID.
  */
 unsigned long long int cmdserv_connection_id(cmdserv_connection* connection);
+
+
+/**
+ * Retrieve idle time for this connection.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object for which to retrieve the
+ *     idle time.
+ *
+ * @return Seconds since last client activity.
+ */
+time_t cmdserv_connection_time_idle(cmdserv_connection* self);
+
+
+/**
+ * Retrieve connection time.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object for which to retrieve the
+ *     connection time.
+ *
+ * @return Seconds since this connection was started.
+ */
+time_t cmdserv_connection_time_connected(cmdserv_connection* self);
 
 
 /**

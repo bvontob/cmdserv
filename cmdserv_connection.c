@@ -69,8 +69,8 @@ struct cmdserv_connection {
   char clienthost[256];           /**< client address as string       */
   char clientport[128];           /**< client port as string          */
 
-  time_t time_connect;            /**< when the client connected      */
-  time_t time_last;               /**< when the client last talked    */
+  time_t time_connect;            /**< time of client connection      */
+  time_t time_last;               /**< time of last client activity   */
 
   char buf[READBUF_SIZE];         /**< data read buffer               */
   size_t buflen;                  /**< current length of read buffer  */
@@ -111,6 +111,14 @@ int cmdserv_connection_fd(cmdserv_connection* self) {
 
 unsigned long long int cmdserv_connection_id(cmdserv_connection* self) {
   return self->id;
+}
+
+time_t cmdserv_connection_time_idle(cmdserv_connection* self) {
+  return time(NULL) - self->time_last;
+}
+
+time_t cmdserv_connection_time_connected(cmdserv_connection* self) {
+  return time(NULL) - self->time_connect;
 }
 
 char *cmdserv_connection_client(cmdserv_connection* self) {

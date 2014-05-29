@@ -71,6 +71,7 @@ cmdserv_log(cmdserv* self, enum cmdserv_logseverity severity,
 char *cmdserv_server_status(cmdserv* self,
                             const char* lt,
                             unsigned long long int mark_conn) {
+  char *idle = NULL;
   char *str = strdup("");
   char *tmp; /* Keep pointer around for free() */
 
@@ -79,15 +80,15 @@ char *cmdserv_server_status(cmdserv* self,
 
   tmp = str;
   if (asprintf(&str,
-               "===========================================================%s"
+               "=======================================================================================%s"
                "SERVER STATUS%s"
-               "===========================================================%s"
+               "=======================================================================================%s"
                "server uptime:       %s%s"
                "connections handled: %llu%s"
                "connections/sec:     %.2f%s"
-               "===========================================================%s"
-               "slot  connection fd    client%s"
-               "===== ========== ===== ====================================%s",
+               "=======================================================================================%s"
+               "slot  connection fd    connected     idle          client%s"
+               "===== ========== ===== ============= ============= ====================================%s",
                lt, lt, lt,
                cmdserv_duration_str(self->time_start, time(NULL)), lt,
                self->conns, lt,
@@ -103,21 +104,26 @@ char *cmdserv_server_status(cmdserv* self,
     if (self->conn[slot_id] == NULL)
       continue;
 
+    idle = strdup(cmdserv_duration_str(0,
+        cmdserv_connection_time_idle(self->conn[slot_id])));
     tmp = str;
     if (asprintf(&str,
-                 "%s%s% 4d #%-9llu #%-4d %s%s",
+                 "%s%s% 4d #%-9llu #%-4d %13s %13s %s%s",
                  str,
                  (cmdserv_connection_id(self->conn[slot_id]) == mark_conn
                   ? "*" : " "),
                  slot_id + 1,
                  cmdserv_connection_id(self->conn[slot_id]),
                  cmdserv_connection_fd(self->conn[slot_id]),
+                 cmdserv_duration_str(0, cmdserv_connection_time_connected(self->conn[slot_id])),
+                 idle,
                  cmdserv_connection_client(self->conn[slot_id]),
                  lt)
         == -1) {
       free(tmp);
       return NULL;
     }
+    free(idle);
     free(tmp);
   }
 
