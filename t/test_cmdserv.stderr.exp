@@ -1,0 +1,7 @@
+cmdserv <info>: server ready for connections on port 12346
+cmdserv <info>: #1 connected from [::1]:10001
+cmdserv <info>: #1 closing
+cmdserv <info>: #2 connected from [::1]:10002
+cmdserv <info>: server shutdown initialized
+cmdserv <info>: #2 closing
+cmdserv <info>: server shutdown reached

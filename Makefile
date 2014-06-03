@@ -36,9 +36,10 @@ t/test-cmdserv-helpers: t/test-cmdserv-helpers.c cmdserv_helpers.o
 doc:
 	which doxygen && doxygen || true
 
-test: tests
+test: check
+tests: check
 
-tests: $(TESTS)
+check: $(TESTS)
 	`which valgrind >/dev/null && echo "valgrind -q --error-exitcode=99"` \
 		./t/test_cmdserv_tokenize \
 		< t/test_cmdserv_tokenize.in \
@@ -52,6 +53,8 @@ tests: $(TESTS)
 		> t/test-cmdserv-helpers.out
 	diff -u t/test-cmdserv-helpers.data t/test-cmdserv-helpers.out \
 		&& rm t/test-cmdserv-helpers.out
+
+	t/test_cmdserv.sh
 
 .PHONY: clean
 clean:

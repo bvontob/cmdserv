@@ -3,5 +3,8 @@ test_cmdserv_tokenize.out
 test-cmdserv-helpers
 test-cmdserv-helpers.out
 test_cmdserv
+test_cmdserv.stderr
+test_cmdserv.stdout
+test_cmdserv.conn
 minimal_cmdserv
 doc/*
