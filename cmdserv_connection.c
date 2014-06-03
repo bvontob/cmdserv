@@ -279,7 +279,7 @@ void cmdserv_connection_read(cmdserv_connection* self) {
       memmove(self->buf,
               self->buf + i + 1,
               self->buflen);
-      break;
+      i = 0; /* Try again for one more line */
     }
   }
 
