@@ -23,7 +23,11 @@ rm -f t/test_cmdserv.stdout t/test_cmdserv.stderr t/test_cmdserv.conn
 
 SERVER_PID=$!
 
-sleep 4
+echo "Waiting for server to start up..."
+while ! grep "ready for connections" t/test_cmdserv.stderr 2>/dev/null
+do
+    sleep 1
+done
 
 echo "-- 1st --" >> t/test_cmdserv.conn
 printf "value get\r\nvalue set testcase\r\nvalue get\r\nexit\r\n" \
