@@ -72,10 +72,12 @@ struct cmdserv_connection {
   time_t time_connect;            /**< time of client connection      */
   time_t time_last;               /**< time of last client activity   */
 
+  size_t readbuf_size;            /**< maximum size of read buffer    */
   char buf[READBUF_SIZE];         /**< data read buffer               */
   size_t buflen;                  /**< current length of read buffer  */
   bool overflow;                  /**< true if buffer was overflowed  */
 
+  unsigned int argc_max           /**< size of argv (without NULL)    */
   char *argv[ARGC_MAX + 1];       /**< parsed command arguments       */
 
   enum cmdserv_state state;       /**< special object states          */
@@ -209,11 +211,12 @@ void cmdserv_connection_close(cmdserv_connection* self) {
     self->close_handler(self->close_object, self);
   close(self->fd);
 
-  /* Be paranoid and zero out some values before freeing. */
+  free(self->);
+  free(self->);
+
+  /* Be paranoid and zero out before freeing. */
   *self = (struct cmdserv_connection){
     .fd       = -1,
-    .id       = 0,
-    .buflen   = 0,
     .overflow = false
   };
 
@@ -225,7 +228,7 @@ void cmdserv_connection_read(cmdserv_connection* self) {
 
   ssize_t received = recv(self->fd,
                           self->buf + self->buflen,
-                          READBUF_SIZE - self->buflen,
+                          self->readbuf_size - self->buflen,
                           0);
 
   if (received == 0) {
@@ -283,7 +286,7 @@ void cmdserv_connection_read(cmdserv_connection* self) {
     }
   }
 
-  if (self->buflen == READBUF_SIZE) {
+  if (self->buflen == self->readbuf_size) {
     self->overflow = true;
     self->buflen   = 0;
     cmdserv_connection_log(self, CMDSERV_WARNING, "command too long");
@@ -298,7 +301,7 @@ static void cmdserv_connection_handle_line(cmdserv_connection *self) {
     self->argv[1] = NULL;
     argc = 1;
   } else {
-    argc = cmdserv_tokenize(self->buf, self->argv, ARGC_MAX + 1);
+    argc = cmdserv_tokenize(self->buf, self->argv, self->argc_max + 1);
   }
 
   if (argc == -1) {
@@ -327,8 +330,10 @@ cmdserv_connection
     .clientport    = { '\0' },
     .time_connect  = time(NULL),
     .time_last     = time(NULL),
+    .readbuf_size  = config->readbuf_size,
     .buflen        = 0,
     .overflow      = false,
+    .argc_max      = config->argc_max,
     .argv          = { NULL },
     .state         = CMDSERV_CONNECTION_STATE_DEFAULT,
     .lineterm      = CMDSERV_LINETERM_LF,
@@ -342,6 +347,12 @@ cmdserv_connection
     .log_handler   = config->log_handler,
     .log_object    = config->log_object
   };
+
+  if ((self = calloc(, sizeof *char)) == NULL)
+    return NULL;
+
+  if ((self = calloc(, sizeof char)) == NULL)
+    return NULL;
 
   self->fd = accept(listener_fd,
                     (struct sockaddr *)&self->clientaddr,
@@ -416,6 +427,8 @@ cmdserv_connection
   return self;
 
  CMDSERV_CONNECTION_ABORT:
+  free(self->);
+  free(self->);
   free(self);
   return NULL;
 }

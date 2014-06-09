@@ -43,31 +43,6 @@ struct cmdserv_connection_config;
 
 
 /**
- * The buffer size per client connection.
- *
- * One command must fit into the buffer completely. Thus, this setting
- * limits the maximum length of a command in octets (including the
- * line terminators).
- *
- * @todo Rename to CMDSERV_CONNECTION_READBUF_SIZE or better yet make
- *     it dynamically adjustable.
- */
-#define READBUF_SIZE 1024
-
-
-/**
- * The maximum number of arguments a command may consist of.
- *
- * The command itself counts as an argument (arg0), thus ARGC_MAX
- * should be set to 3 to parse a command like "command arg1 arg2".
- *
- * @todo Rename to CMDSERV_CONNECTION_ARGC_MAX or better yet make it
- *     dynamically adjustable.
- */
-#define ARGC_MAX 8
-
-
-/**
  * Configure end-of-line character modes.
  *
  * @todo

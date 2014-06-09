@@ -61,6 +61,23 @@
  */
 struct cmdserv_connection_config {
   /**
+   * The read-buffer size per client connection.
+   *
+   * One command must fit into the buffer completely. Thus, this setting
+   * limits the maximum length of a command in octets (including the
+   * line terminators).
+   */
+  size_t readbuf_size;
+
+  /**
+   * The maximum number of arguments a command may consist of.
+   *
+   * The command itself counts as an argument (arg0), thus argc_max
+   * should be set to 3 to parse a command like "command arg1 arg2".
+   */
+  unsigned int argc_max;
+
+  /**
    * The connection object will do a callback to this handler
    * whenever a command from the client has been parsed and is ready
    * to execute.

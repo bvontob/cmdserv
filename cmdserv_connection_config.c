@@ -4,6 +4,8 @@
 
 struct cmdserv_connection_config cmdserv_connection_config_get_defaults() {
   return (struct cmdserv_connection_config){
+    .readbuf_size  = 1024,
+    .argc_max      = 8,
     .cmd_handler   = NULL,
     .cmd_object    = NULL,
     .open_handler  = NULL,
