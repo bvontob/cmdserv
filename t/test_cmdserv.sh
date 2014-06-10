@@ -1,6 +1,7 @@
 #!/bin/sh
 
-PORT=12346
+CMDSERV_PORT=12346
+CMDSERV_HOST=::1
 
 if which netcat >/dev/null 2>&1
 then
@@ -31,11 +32,11 @@ done
 
 echo "-- 1st --" >> t/test_cmdserv.conn
 printf "value get\r\nvalue set testcase\r\nvalue get\r\nexit\r\n" \
-    | $NETCAT -p10001 -q5 localhost $PORT \
+    | $NETCAT -p10001 -q5 $CMDSERV_HOST $CMDSERV_PORT \
     >> t/test_cmdserv.conn
 echo "-- 2nd --" >> t/test_cmdserv.conn
 printf "value get\r\nserver shutdown\r\n" \
-    | $NETCAT -p10002 -q5 localhost $PORT \
+    | $NETCAT -p10002 -q5 $CMDSERV_HOST $CMDSERV_PORT \
     >> t/test_cmdserv.conn
 
 wait $SERVER_PID || exit $?
