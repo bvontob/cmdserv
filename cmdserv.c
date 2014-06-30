@@ -254,8 +254,14 @@ void cmdserv_close_handler(void *object,
   if (self->close_handler_orig)
     self->close_handler_orig(self->close_object_orig, connection);
 
-  FD_CLR(fd, &self->fds);
-  self->conn[cmdserv_get_slot_id_from_fd(self, fd)] = NULL;
+  /*
+   * Remove connection, but skip for those that have never been added
+   * to a slot/the FD list (e.g. on too many connections)
+   */
+  if (FD_ISSET(fd, &self->fds)) {
+    FD_CLR(fd, &self->fds);
+    self->conn[cmdserv_get_slot_id_from_fd(self, fd)] = NULL;
+  }
 }
 
 
@@ -288,8 +294,8 @@ static void cmdserv_accept(cmdserv* self) {
   }
 
   self->conn[slot_id] = new_conn;
-
   FD_SET(cmdserv_connection_fd(self->conn[slot_id]), &self->fds);
+
   if (cmdserv_connection_fd(self->conn[slot_id]) > self->fdmax)
     self->fdmax = cmdserv_connection_fd(self->conn[slot_id]);
 }
