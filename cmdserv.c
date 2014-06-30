@@ -261,29 +261,31 @@ void cmdserv_close_handler(void *object,
  * Private method to handle a new incoming connection.
  */
 static void cmdserv_accept(cmdserv* self) {
-  int slot_id = cmdserv_get_free_slot(self);
+  int slot_id;
+  struct cmdserv_connection* new_conn;
 
   self->conns++;
 
-  if (slot_id == -1) {
-    cmdserv_log(self, CMDSERV_WARNING, "too many connections");
-    /* Turn them away by accepting and closing instantly */
-    int tempfd;
-    if ((tempfd = accept(self->listener, NULL, NULL)) != -1) {
-      dprintf(tempfd, "500 Busy\r\n");
-      close(tempfd);
-    }
+  if ((new_conn = cmdserv_connection_create(self->listener,
+                                            self->conns,
+                                            &self->connection_config))
+      == NULL) {
+    cmdserv_log(self, CMDSERV_ERR,
+                "cmdserv_connection_create(#%llu) failed",
+                self->conns);
     return;
   }
 
-  /* XXX Check for NULL return (errors) */
-  self->conn[slot_id] = cmdserv_connection_create(self->listener,
-                                                  self->conns,
-                                                  &self->connection_config);
+  if ((slot_id = cmdserv_get_free_slot(self)) == -1) {
+    cmdserv_log(self, CMDSERV_WARNING,
+                "too many connections, turning #%llu away",
+                self->conns);
+    cmdserv_connection_println(new_conn, "500 Busy");
+    cmdserv_connection_close(new_conn);
+    return;
+  }
 
-  cmdserv_connection_log(self->conn[slot_id], CMDSERV_INFO,
-                         "connected from %s",
-                         cmdserv_connection_client(self->conn[slot_id]));
+  self->conn[slot_id] = new_conn;
 
   FD_SET(cmdserv_connection_fd(self->conn[slot_id]), &self->fds);
   if (cmdserv_connection_fd(self->conn[slot_id]) > self->fdmax)
@@ -295,7 +297,11 @@ static int cmdserv_get_slot_id_from_fd(cmdserv* self, int fd) {
     if (self->conn[slot_id] != NULL
         && cmdserv_connection_fd(self->conn[slot_id]) == fd) 
       return slot_id;
-  /* XXX MUST NOT BE REACHED -- Exception handling? */
+
+  cmdserv_log(self, CMDSERV_WARNING,
+              "cmdserv_get_slot_id_from_fd(#%d): "
+              "FD not associated with any connection",
+              fd);
   return -1;
 }
 

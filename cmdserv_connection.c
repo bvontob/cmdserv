@@ -411,6 +411,10 @@ cmdserv_connection
     }
   }
 
+  cmdserv_connection_log(self, CMDSERV_INFO,
+                         "connected from %s",
+                         cmdserv_connection_client(self));
+
   if (self->open_handler)
     self->open_handler(self->open_object, self);
 
