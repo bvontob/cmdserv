@@ -86,6 +86,7 @@ char *cmdserv_server_status(cmdserv* self,
                "server uptime:       %s%s"
                "connections handled: %llu%s"
                "connections/sec:     %.2f%s"
+               "listener fd:         #%d%s"
                "=======================================================================================%s"
                "slot  connection fd    connected     idle          client%s"
                "===== ========== ===== ============= ============= ====================================%s",
@@ -93,6 +94,7 @@ char *cmdserv_server_status(cmdserv* self,
                cmdserv_duration_str(self->time_start, time(NULL)), lt,
                self->conns, lt,
                (double)self->conns / (double)(time(NULL) + 1 - self->time_start), lt,
+               self->listener, lt,
                lt, lt, lt)
       == -1) {
     free(tmp);
