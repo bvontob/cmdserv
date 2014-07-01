@@ -37,7 +37,6 @@
  */
 
 #include <err.h>
-#include <signal.h> /* Only temporarily, while we use sigaction() */
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -155,8 +154,6 @@ int main(void) {
                              .tv_usec = 0 };
 
   struct cmdserv_config config = cmdserv_config_get_defaults();
-
-  sigaction(SIGPIPE, &(struct sigaction){ .sa_handler = SIG_IGN }, NULL);
 
   config.port                           = 12346;
   config.connections_max                = 4;
