@@ -41,6 +41,10 @@ cmdserv <info>: #11 client disconnect
 cmdserv <info>: #11 closing
 -- TESTCASE 3 --
 cmdserv <info>: #14 connected from [::1]:30001
-cmdserv <info>: server shutdown initialized
+cmdserv <info>: #14 client disconnect
 cmdserv <info>: #14 closing
+-- TESTCASE 4 --
+cmdserv <info>: #15 connected from [::1]:40001
+cmdserv <info>: server shutdown initialized
+cmdserv <info>: #15 closing
 cmdserv <info>: server shutdown reached

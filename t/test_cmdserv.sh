@@ -58,6 +58,10 @@ done
 # Test cases
 ################################################################################
 
+# TO DO: Add time outs for all connections to server, so we do not hang after
+#        a server crash.
+# TO DO: Check for exit codes of test programs and report them as test failures.
+
 __TESTCASE__ 1
 
 printf "value get\r\nvalue set testcase\r\nvalue get\r\nexit\r\n" \
@@ -74,6 +78,11 @@ done >> t/test_cmdserv.conn
 
 
 __TESTCASE__ 3
+
+t/close-no-read $SOURCE_PORT $CMDSERV_HOST $CMDSERV_PORT
+
+
+__TESTCASE__ 4
 
 printf "value get\r\nserver shutdown\r\n" \
     | $NETCAT -p $SOURCE_PORT -q5 $CMDSERV_HOST $CMDSERV_PORT \
