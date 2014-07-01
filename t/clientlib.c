@@ -1,22 +1,18 @@
 #include "clientlib.h"
 
-#include <err.h>
 #include <netdb.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #define HOSTBUFLEN  256
 #define PORTBUFLEN  16
 #define DEFAULTPORT "12346"
-
-#define info(...) warnx(__VA_ARGS__)
+#define RELAYBUFLEN 4096
 
 int cmdserv_connect(int argc, char** argv) {
   struct addrinfo* ai;
   int ai_res;
-  int sock_fd = -1;
+  int fd = -1;
   char host[HOSTBUFLEN], port[PORTBUFLEN];
 
   if (argc > 3)
@@ -36,7 +32,7 @@ int cmdserv_connect(int argc, char** argv) {
     errx(EXIT_FAILURE, "getaddrinfo(): %s", gai_strerror(ai_res));
 
   for (struct addrinfo* serv = ai;
-       serv != NULL && sock_fd == -1;
+       serv != NULL && fd == -1;
        serv = serv->ai_next) {
 
     if ((ai_res = getnameinfo(serv->ai_addr,
@@ -47,26 +43,56 @@ int cmdserv_connect(int argc, char** argv) {
       errx(EXIT_FAILURE, "getaddrinfo(): %s", gai_strerror(ai_res));
     info("Trying %s port %s...", host, port);
     
-    if ((sock_fd = socket(serv->ai_family,
+    if ((fd = socket(serv->ai_family,
                           serv->ai_socktype,
                           serv->ai_protocol)) == -1) {
       warn("socket()");
       continue;
     }
     
-    if (connect(sock_fd, serv->ai_addr, serv->ai_addrlen) != 0) {
+    if (connect(fd, serv->ai_addr, serv->ai_addrlen) != 0) {
       warn("connect()");
-      close(sock_fd);
-      sock_fd = -1;
+      close(fd);
+      fd = -1;
       continue;
     }
   }
 
   freeaddrinfo(ai);
 
-  if (sock_fd == -1)
+  if (fd == -1)
     errx(EXIT_FAILURE, "Connection failed.");
   info("Connected.");
 
-  return sock_fd;
+  return fd;
+}
+
+void cmdserv_relay(int in_fd, int out_fd) {
+  ssize_t buflen, crlflen, writelen;
+  char buf[RELAYBUFLEN];
+  char crlf[RELAYBUFLEN * 2];
+
+  while ((buflen = read(in_fd, buf, RELAYBUFLEN)) > 0) {
+    crlflen = 0;
+    for (ssize_t i = 0; i < buflen; i++) {
+      if (buf[i] == '\n')
+        crlf[crlflen++] = '\r';
+      crlf[crlflen++] = buf[i];
+    }
+    
+    if ((writelen = write(out_fd, crlf, crlflen)) == -1)
+      err(EXIT_FAILURE, "write(#%d)", out_fd);
+
+    if (writelen != crlflen) /* only here in test cases */
+      errx(EXIT_FAILURE, "write(#%d): Could not write entire block", out_fd);
+  }
+
+  if (buflen == -1)
+    err(EXIT_FAILURE, "read(#%d)", in_fd);
+}
+
+void cmdserv_close(int fd) {
+  if (close(fd) != 0)
+    err(EXIT_FAILURE, "close(#%d)", fd);
+  info("Closed.");
 }

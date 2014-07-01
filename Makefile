@@ -11,7 +11,9 @@ CFLAGS := -Wall -Wextra -pedantic -Werror \
 TESTS  := t/test_cmdserv_tokenize \
           t/test-cmdserv-helpers  \
           t/minimal_cmdserv       \
-          t/test_cmdserv
+          t/test_cmdserv          \
+	  t/too-many-connections  \
+	  t/close-no-read
 
 default: $(OBJS)
 
@@ -31,6 +33,12 @@ t/test_cmdserv_tokenize: t/test_cmdserv_tokenize.c cmdserv_tokenize.o
 
 t/test-cmdserv-helpers: t/test-cmdserv-helpers.c cmdserv_helpers.o
 	$(CC) $(CFLAGS) $< cmdserv_helpers.o -o $@
+
+t/too-many-connections: t/too-many-connections.c t/clientlib.o
+	$(CC) $(CFLAGS) $< t/clientlib.o -o $@
+
+t/close-no-read: t/close-no-read.c t/clientlib.o
+	$(CC) $(CFLAGS) $< t/clientlib.o -o $@
 
 .PHONY: doc
 doc:

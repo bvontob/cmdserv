@@ -1,3 +1,5 @@
+too-many-connections
+close-no-read
 test_cmdserv_tokenize
 test_cmdserv_tokenize.out
 test-cmdserv-helpers
