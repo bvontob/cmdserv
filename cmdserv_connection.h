@@ -377,7 +377,7 @@ unsigned long long int cmdserv_connection_id(cmdserv_connection* connection);
  *
  * @return Seconds since last client activity.
  */
-time_t cmdserv_connection_time_idle(cmdserv_connection* self);
+time_t cmdserv_connection_time_idle(cmdserv_connection* connection);
 
 
 /**
@@ -390,7 +390,7 @@ time_t cmdserv_connection_time_idle(cmdserv_connection* self);
  *
  * @return Seconds since this connection was started.
  */
-time_t cmdserv_connection_time_connected(cmdserv_connection* self);
+time_t cmdserv_connection_time_connected(cmdserv_connection* connection);
 
 
 /**
