@@ -73,7 +73,7 @@ int cmdserv_connect(int argc, char** argv) {
       if (setsockopt(fd, SOL_SOCKET,
                      SO_REUSEADDR, &(int){1}, sizeof(int))
           == -1) {
-        warn("setsockopt(SO_REUSEADDR)");
+        warn("setsockopt(#%d, ..., SO_REUSEADDR, ...)", fd);
         close(fd);
         fd = -1;
         continue;
@@ -96,7 +96,7 @@ int cmdserv_connect(int argc, char** argv) {
                   },
                   sizeof(struct sockaddr_in)))
           != 0) {
-        warn("bind()");
+        warn("bind(#%d, ...)", fd);
         close(fd);
         fd = -1;
         continue;
@@ -104,7 +104,7 @@ int cmdserv_connect(int argc, char** argv) {
     }
 
     if (connect(fd, serv->ai_addr, serv->ai_addrlen) != 0) {
-      warn("connect()");
+      warn("connect(#%d, ...)", fd);
       close(fd);
       fd = -1;
       continue;
@@ -117,8 +117,8 @@ int cmdserv_connect(int argc, char** argv) {
     src_port++;
 
   if (fd == -1)
-    errx(EXIT_FAILURE, "Connection failed.");
-  info("Connected.");
+    errx(EXIT_FAILURE, "connection failed");
+  info("#%d connected", fd);
 
   return fd;
 }
@@ -150,5 +150,5 @@ void cmdserv_relay(int in_fd, int out_fd) {
 void cmdserv_close(int fd) {
   if (close(fd) != 0)
     err(EXIT_FAILURE, "close(#%d)", fd);
-  info("Closed.");
+  info("#%d closed", fd);
 }

@@ -1,6 +1,8 @@
 #include "clientlib.h"
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MAXCONNS  256
 #define MAXBUFLEN 256
@@ -37,6 +39,20 @@ int main(int argc, char** argv) {
   free(line);
   line = NULL;
 
-  for (--conns; conns >= 0; conns--)
+  for (--conns; conns >= 0; conns--) {
     fclose(stream[conns]);
+
+    /*
+     * For the test cases: Try to get a stable order on close
+     * operations, by checking that the file handle is realy closed,
+     * and trying to yield in poor man's way in between. Otherwise the
+     * chances are too high, that the cmdserv gets multiple close
+     * operations at once and works through them in a different order.
+     */
+    while (fcntl(fd[conns], F_GETFD) != -1) {
+      sleep(0);
+    }
+
+    info("#%d closed.", fd[conns]);
+  }
 }
