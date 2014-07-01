@@ -79,7 +79,8 @@ done >> t/test_cmdserv.conn
 
 __TESTCASE__ 3
 
-t/close-no-read $SOURCE_PORT $CMDSERV_HOST $CMDSERV_PORT
+printf "value get\r\server status\r\nvalue get\r\n" \
+    | t/close-no-read $SOURCE_PORT $CMDSERV_HOST $CMDSERV_PORT
 
 
 __TESTCASE__ 4
