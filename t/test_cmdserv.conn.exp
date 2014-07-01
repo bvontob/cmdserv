@@ -1,4 +1,4 @@
--- 1st --
+-- TESTCASE 1 --
 101 Ready
 
 200 OK
@@ -7,7 +7,20 @@ testcase
 testcase
 200 OK
 200 OK
--- 2nd --
+-- TESTCASE 2 --
+101 Ready
+101 Ready
+101 Ready
+101 Ready
+500 Busy
+500 Busy
+101 Ready
+101 Ready
+101 Ready
+101 Ready
+500 Busy
+500 Busy
+-- TESTCASE 3 --
 101 Ready
 testcase
 200 OK
