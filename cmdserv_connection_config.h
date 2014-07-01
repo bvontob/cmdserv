@@ -99,9 +99,17 @@ struct cmdserv_connection_config {
    *
    * This would be the right place to display e.g. a connection
    * banner.
+   *
+   * The parameter enum cmdserv_close_reason reason will normally be
+   * set to 0 (CMDSERV_NO_CLOSE).  It might be set to
+   * CMDSERV_SERVER_TOO_MANY_CONNECTIONS, though, to notify the
+   * open_handler that the connection will be closed again right away,
+   * so the handler can possibly take different action (like
+   * displaying a different banner).
    */
   void (*open_handler)(void *open_object,
-                       cmdserv_connection* connection);
+                       cmdserv_connection* connection,
+                       enum cmdserv_close_reason reason);
 
   /**
    * A pointer to an arbitrary object that will be handed over to you
@@ -112,15 +120,15 @@ struct cmdserv_connection_config {
 
   /**
    * The connection object will inform its creator when the connection
-   * is being closed through this callback, with the original
-   * connection ID and the internal file descriptor.  The callback
-   * will get triggered right before the close on the socket file
-   * descriptor.  After the callback has returned the file descriptor
-   * is invalid and no methods on this object shall be called, as it
-   * destructs itself automatically.
+   * is being closed through this callback.  The callback will get
+   * triggered right before the close on the socket file descriptor.
+   * After the callback has returned the file descriptor is invalid
+   * and no methods on this object shall be called, as it destructs
+   * itself automatically.
    */
   void (*close_handler)(void *close_object,
-                        cmdserv_connection* connection);
+                        cmdserv_connection* connection,
+                        enum cmdserv_close_reason reason);
 
   /**
    * A pointer to an arbitrary object that will be handed over to you

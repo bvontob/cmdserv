@@ -34,7 +34,8 @@ struct cmdserv {
   void *log_object;
 
   void (*close_handler_orig)(void *close_object,
-                             cmdserv_connection* connection);
+                             cmdserv_connection* connection,
+                             enum cmdserv_close_reason reason);
   void *close_object_orig;
 
   struct cmdserv_connection* conn[];
@@ -46,7 +47,8 @@ static int cmdserv_get_free_slot(cmdserv* self);
 static int cmdserv_get_slot_id_from_fd(cmdserv* self, int fd);
 
 void cmdserv_close_handler(void *close_object,
-                           cmdserv_connection *connection);
+                           cmdserv_connection *connection,
+                           enum cmdserv_close_reason reason);
 
 void cmdserv_vlog(cmdserv* self, enum cmdserv_logseverity severity,
                   const char *fmt, va_list ap) {
@@ -141,7 +143,8 @@ void cmdserv_shutdown(cmdserv* self) {
 
   for (int slot_id = 0; slot_id < self->connections_max; slot_id++) {
     if (self->conn[slot_id] != NULL) {
-      cmdserv_connection_close(self->conn[slot_id]);
+      cmdserv_connection_close(self->conn[slot_id],
+                               CMDSERV_SERVER_SHUTDOWN);
       self->conn[slot_id] = NULL;
     }
   }
@@ -246,13 +249,14 @@ cmdserv* cmdserv_start(struct cmdserv_config config) {
 
 
 void cmdserv_close_handler(void *object,
-                           cmdserv_connection* connection) {
+                           cmdserv_connection* connection,
+                           enum cmdserv_close_reason reason) {
   cmdserv *self = object;
   int fd = cmdserv_connection_fd(connection);
 
   /* Chain through to the close handler our caller originally requested */
   if (self->close_handler_orig)
-    self->close_handler_orig(self->close_object_orig, connection);
+    self->close_handler_orig(self->close_object_orig, connection, reason);
 
   /*
    * Remove connection, but skip for those that have never been added
@@ -273,10 +277,14 @@ static void cmdserv_accept(cmdserv* self) {
   struct cmdserv_connection* new_conn;
 
   self->conns++;
+  slot_id = cmdserv_get_free_slot(self);
 
   if ((new_conn = cmdserv_connection_create(self->listener,
                                             self->conns,
-                                            &self->connection_config))
+                                            &self->connection_config,
+                                            slot_id == -1
+                                            ? CMDSERV_SERVER_TOO_MANY_CONNECTIONS
+                                            : CMDSERV_NO_CLOSE))
       == NULL) {
     cmdserv_log(self, CMDSERV_ERR,
                 "cmdserv_connection_create(#%llu) failed",
@@ -284,12 +292,11 @@ static void cmdserv_accept(cmdserv* self) {
     return;
   }
 
-  if ((slot_id = cmdserv_get_free_slot(self)) == -1) {
+  if (slot_id == -1) {
     cmdserv_log(self, CMDSERV_WARNING,
                 "too many connections, turning #%llu away",
                 self->conns);
-    cmdserv_connection_println(new_conn, "500 Busy");
-    cmdserv_connection_close(new_conn);
+    cmdserv_connection_close(new_conn, CMDSERV_SERVER_TOO_MANY_CONNECTIONS);
     return;
   }
 

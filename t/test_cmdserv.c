@@ -48,10 +48,15 @@
 static bool shutdown = false;
 static cmdserv* server = NULL;
 
-void banner(void *open_object, cmdserv_connection* connection) {
+void banner(void *open_object,
+            cmdserv_connection* connection,
+            enum cmdserv_close_reason close_reason) {
   (void)open_object; /* UNUSED */
 
-  cmdserv_connection_send_status(connection, 101, "Ready");
+  if (close_reason == CMDSERV_NO_CLOSE)
+    cmdserv_connection_send_status(connection, 101, "Ready");
+  else
+    cmdserv_connection_send_status(connection, 500, "Busy");
 }
 
 void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **argv) {
@@ -88,7 +93,7 @@ void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **
     if (argc != 1)
       goto WRONG_ARGUMENTS;
     cmdserv_connection_send_status(connection, 200, "OK");
-    cmdserv_connection_close(connection);
+    cmdserv_connection_close(connection, CMDSERV_APPLICATION_CLOSE);
 
   } else if (strcmp("value", argv[0]) == 0) { /* value get/set */
     if (strcmp("get", argv[1]) == 0) {

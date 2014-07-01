@@ -43,6 +43,37 @@ struct cmdserv_connection_config;
 
 
 /**
+ * Reasons on why a connection was closed.
+ *
+ * These values are communicated to the open_handler and close_handler
+ * registered by the application, so it can take special action (if
+ * required by the communications protocol implemented) for some
+ * "abnormal" reasons for a connection close.
+ *
+ * The library reserves the values 0, 1, 49x (490 to 499), and 59x
+ * (590 to 599) for special use.  Other values, though not part of the
+ * enum, but compatible with it (users should stick to positive int
+ * values), can theoretically be used by the application in calls to
+ * cmdserv_connection_close(), if it wishes to communicate different
+ * specific reasons for a close.
+ *
+ * @see cmdserv_connection_close()
+ */
+enum cmdserv_close_reason {
+  CMDSERV_NO_CLOSE                    = 0,   /**< connection still active   */
+
+  CMDSERV_APPLICATION_CLOSE           = 1,   /**< app initiated close       */
+
+  CMDSERV_CLIENT_DISCONNECT           = 490, /**< client closed connection  */
+  CMDSERV_CLIENT_RECEIVE_ERROR        = 491, /**< error from recv()         */
+  CMDSERV_CLIENT_TIMEOUT              = 492, /**< client inactivity         */
+
+  CMDSERV_SERVER_SHUTDOWN             = 590, /**< cmdserv_shutdown() called */
+  CMDSERV_SERVER_TOO_MANY_CONNECTIONS = 591, /**< connections_max reached   */
+};
+
+
+/**
  * Configure end-of-line character modes.
  *
  * @todo
@@ -133,6 +164,13 @@ typedef struct cmdserv_connection cmdserv_connection;
  *      A cmdserv_connection_config object defining the connection
  *      parameters, including the callbacks.
  *
+ * @param close_reason
+ *
+ *      Set this to a specific reason (the library guarantess to only
+ *      ever use CMDSERV_SERVER_TOO_MANY_CONNECTIONS) if it is already
+ *      known that this connection will be immediately closed again.
+ *      Will usually be 0 (CMDSERV_NO_CLOSE) for ordinary connections.
+ *
  * @return The newly created client connection or NULL on failure.
  *
  * @see cmdserv_connection_config
@@ -140,7 +178,8 @@ typedef struct cmdserv_connection cmdserv_connection;
 cmdserv_connection
 *cmdserv_connection_create(int listener_fd,
                            unsigned long long int conn_id,
-                           struct cmdserv_connection_config* config);
+                           struct cmdserv_connection_config* config,
+                           enum cmdserv_close_reason close_reason);
 
 
 /**
@@ -149,8 +188,26 @@ cmdserv_connection
  * @param connection
  *
  *     The connection to be closed.
+ *
+ * @param reason
+ *
+ *     Why the connection was closed.  This will be communicated to
+ *     the close_handler to take appropriate action if needed.  The
+ *     library guarantees to only use values defined in the enum
+ *     cmdserv_close_reason if it needs to call the close_handler on
+ *     its own.
+ *
+ *     Applications should set this to CMDSERV_APPLICATION_CLOSE (1),
+ *     if they do not require to communicate any special reason.  The
+ *     value CMDSERV_NO_CLOSE (0) will never be passed on to the
+ *     close_handler but translated to CMDSERV_APPLICATION_CLOSE (1)
+ *     first by the library.  So if this feature is not used by the
+ *     application, any of 0 or 1 can be used.
+ *
+ * @see enum cmdserv_close_reason
  */
-void cmdserv_connection_close(cmdserv_connection* connection);
+void cmdserv_connection_close(cmdserv_connection* connection,
+                              enum cmdserv_close_reason reason);
 
 
 /**

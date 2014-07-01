@@ -42,9 +42,9 @@
  * method has to know if it is being called from within a command
  * handler (the state will be set to CMDSERV_CONNECTION_STATE_HANDLED
  * before entering it).  In that case it should just note the close
- * request (setting the state to CMDSERV_CONNECTION_STATE_CLOSED), but
- * not take any real action on it.  Only once the command handler
- * returned to us, we're going to call the method once again.
+ * request (setting the close_reason), but not take any real action on
+ * it.  Only once the command handler returned to us, we're going to
+ * call the method once again.
  *
  * @see cmdserv_connection_close() cmdserv_connection_read()
  *      cmdserv_connection.state
@@ -52,7 +52,6 @@
 enum cmdserv_state {
   CMDSERV_CONNECTION_STATE_DEFAULT = 0, /**< No notable state         */
   CMDSERV_CONNECTION_STATE_HANDLED = 1, /**< In the command handler   */
-  CMDSERV_CONNECTION_STATE_CLOSED  = 2, /**< Delayed close pending    */
 };
 
 
@@ -82,6 +81,8 @@ struct cmdserv_connection {
 
   enum cmdserv_state state;       /**< special object states          */
 
+  enum cmdserv_close_reason close_reason;
+
   enum cmdserv_lineterm lineterm; /**< setting for line termination   */
   bool rawmode;                   /**< skip the tokenizer             */
 
@@ -92,11 +93,13 @@ struct cmdserv_connection {
   void *cmd_object;
 
   void (*open_handler)(void *open_object,
-                       cmdserv_connection* connection);
+                       cmdserv_connection* connection,
+                       enum cmdserv_close_reason reason);
   void *open_object;
 
   void (*close_handler)(void *close_object,
-                        cmdserv_connection* connection);
+                        cmdserv_connection* connection,
+                        enum cmdserv_close_reason reason);
   void *close_object;
 
   void (*log_handler)(void *log_object,
@@ -199,17 +202,19 @@ cmdserv_connection_printf(cmdserv_connection* self,
   va_end(args);
 }
 
-void cmdserv_connection_close(cmdserv_connection* self) {
-  if (self->state == CMDSERV_CONNECTION_STATE_HANDLED) {
-    /* Take note for a delayed close if we're being handled right now */
-    self->state = CMDSERV_CONNECTION_STATE_CLOSED;
+void cmdserv_connection_close(cmdserv_connection* self,
+                              enum cmdserv_close_reason reason) {
+  self->close_reason = (reason == CMDSERV_NO_CLOSE
+                        ? CMDSERV_APPLICATION_CLOSE
+                        : reason);
+
+  if (self->state == CMDSERV_CONNECTION_STATE_HANDLED)
     return;
-  }
 
   cmdserv_connection_log(self, CMDSERV_INFO, "closing");
 
   if (self->close_handler)
-    self->close_handler(self->close_object, self);
+    self->close_handler(self->close_object, self, self->close_reason);
 
   cmdserv_connection_free(self);
 }
@@ -224,7 +229,7 @@ void cmdserv_connection_read(cmdserv_connection* self) {
 
   if (received == 0) {
     cmdserv_connection_log(self, CMDSERV_INFO, "client disconnect");
-    cmdserv_connection_close(self);
+    cmdserv_connection_close(self, CMDSERV_CLIENT_DISCONNECT);
     return;
 
   } else if (received == -1) {
@@ -232,7 +237,7 @@ void cmdserv_connection_read(cmdserv_connection* self) {
       return;
     cmdserv_connection_log(self, CMDSERV_ERR,
                            "recv() error: %s", strerror(errno));
-    cmdserv_connection_close(self);
+    cmdserv_connection_close(self, CMDSERV_CLIENT_RECEIVE_ERROR);
     return;
   }
 
@@ -260,12 +265,12 @@ void cmdserv_connection_read(cmdserv_connection* self) {
 
         self->state = CMDSERV_CONNECTION_STATE_HANDLED;
         cmdserv_connection_handle_line(self);
-        if (self->state == CMDSERV_CONNECTION_STATE_CLOSED) {
-          cmdserv_connection_close(self);
+        self->state = CMDSERV_CONNECTION_STATE_DEFAULT;
+
+        if (self->close_reason != CMDSERV_NO_CLOSE) {
+          cmdserv_connection_close(self, self->close_reason);
           return;
         }
-        self->state = CMDSERV_CONNECTION_STATE_DEFAULT;
-    
       }
 
       /* Move rest of buffer to beginning */
@@ -308,7 +313,8 @@ static void cmdserv_connection_handle_line(cmdserv_connection *self) {
 cmdserv_connection
 *cmdserv_connection_create(int listener_fd,
                            unsigned long long int conn_id,
-                           struct cmdserv_connection_config* config) {
+                           struct cmdserv_connection_config* config,
+                           enum cmdserv_close_reason close_reason) {
   cmdserv_connection* self;
 
   if ((self = malloc(sizeof(struct cmdserv_connection))) == NULL)
@@ -326,6 +332,7 @@ cmdserv_connection
     .overflow      = false,
     .argc_max      = config->argc_max,
     .state         = CMDSERV_CONNECTION_STATE_DEFAULT,
+    .close_reason  = CMDSERV_NO_CLOSE,
     .lineterm      = CMDSERV_LINETERM_LF,
     .rawmode       = false,
     .cmd_handler   = config->cmd_handler,
@@ -416,7 +423,7 @@ cmdserv_connection
                          cmdserv_connection_client(self));
 
   if (self->open_handler)
-    self->open_handler(self->open_object, self);
+    self->open_handler(self->open_object, self, close_reason);
 
   return self;
 
