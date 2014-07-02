@@ -5,8 +5,9 @@ OBJS   := cmdserv_tokenize.o          \
 	  cmdserv_connection_config.o \
 	  cmdserv_connection.o        \
 	  cmdserv.o
+# TO DO: Add -Wwrite-strings and make code compile with it
 CFLAGS := -Wall -Wextra -pedantic -Werror \
-	  -std=c99 -D_POSIX_C_SOURCE=200809L \
+	  -D_POSIX_C_SOURCE=200809L \
           -fstack-protector-all
 TESTS  := t/test_cmdserv_tokenize \
           t/test-cmdserv-helpers  \
@@ -14,6 +15,24 @@ TESTS  := t/test_cmdserv_tokenize \
           t/test_cmdserv          \
 	  t/too-many-connections  \
 	  t/close-no-read
+
+# Compiler compatibility: We support gcc, pcc, clang, and tcc (although the
+# generated code crashes currenly using tcc on Ubuntu 12.04)
+ifeq ($(CC),pcc)
+  # The Portable C Compiler pcc needs this on Ubuntu 12.04 as of 2014-07-02
+  # to compile against glibc, as it won't find bits/predefs.h included from
+  # features.h
+  CFLAGS += -I/usr/include/x86_64-linux-gnu
+endif
+ifeq ($(CC),tcc)
+  # The Tiny C Compiler tcc should warn about features from gcc it ignores
+  CFLAGS += -Wunsupported
+else
+  # gcc, clang, and pcc all understand (or at leat ignore) and need this to
+  # compile our C99 code. Only tcc chokes on it but compiles our C99 fine
+  # without.
+  CFLAGS += -std=c99
+endif
 
 default: $(OBJS)
 

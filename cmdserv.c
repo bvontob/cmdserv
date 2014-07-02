@@ -159,8 +159,8 @@ cmdserv* cmdserv_start(struct cmdserv_config config) {
 
   struct sockaddr_in6 servaddr = {
     .sin6_family = AF_INET6,
-    .sin6_addr   = in6addr_any,
-    .sin6_port   = htons(config.port),
+    .sin6_addr   = IN6ADDR_ANY_INIT,
+    .sin6_port   = htons(config.port)
   };
 
   if ((self = malloc(sizeof(struct cmdserv)
