@@ -305,16 +305,19 @@ void cmdserv_connection_send_status(cmdserv_connection* connection,
 
 
 /**
- * Write nbyte bytes from the buffer pointed to by buf.
+ * Send nbyte bytes from the buffer pointed to by buf.
  *
- * This method behaves excactly like your system's write() call, with
+ * This method behaves excactly like your system's send() call, with
  * the only exception being the first argument: A cmdserv connection
  * object instead of a file descriptor.  Refer to your system's
- * write() documentation for further details and semantics.
+ * send() documentation for further details and semantics.
+ *
+ * The library itself uses this method as the low-level operation for
+ * all output to client connections.
  *
  * @param connection
  *
- *     The cmdserv connection object to write on.
+ *     The cmdserv connection object to send on.
  *
  * @param buf
  *
@@ -324,11 +327,17 @@ void cmdserv_connection_send_status(cmdserv_connection* connection,
  *
  *     Number of bytes to write.
  *
+ * @param flags
+ *
+ *     Flags handed over to send().  Pass in MSG_NOSIGNAL unless you
+ *     have installed a signal handler for SIGPIPE.
+ *
  * @return The number of bytes actually written or -1 for errors.
  */
-ssize_t cmdserv_connection_write(cmdserv_connection* connection,
-                                 const void *buf,
-                                 size_t nbyte);
+ssize_t cmdserv_connection_send(cmdserv_connection* connection,
+                                const void *buf,
+                                size_t nbyte,
+                                int flags);
 
 
 /**

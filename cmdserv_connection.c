@@ -177,10 +177,11 @@ cmdserv_connection_send_status(cmdserv_connection* self,
   dprintf(self->fd, "\r\n");
 }
 
-ssize_t cmdserv_connection_write(cmdserv_connection* self,
-                                 const void *buf,
-                                 size_t nbyte) {
-  return write(self->fd, buf, nbyte);
+ssize_t cmdserv_connection_send(cmdserv_connection* self,
+                                const void *buf,
+                                size_t nbyte,
+                                int flags) {
+  return send(self->fd, buf, nbyte, flags);
 }
 
 void cmdserv_connection_print(cmdserv_connection* self,
