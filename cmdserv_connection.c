@@ -22,6 +22,42 @@
 
 
 /**
+ * Returns the current line termination string for the
+ * cmdserv_connection object o.
+ */
+#define EOL(o) ((o)->lineterm == CMDSERV_LINETERM_LF ? "\n" : "\r\n")
+
+
+/**
+ * Macro for use with snprintf()/vsnprintf() and the internal
+ * cmdserv_connection writebuf.
+ *
+ * The macro compares the current writebuf_size of cmdserv_connection
+ * object o with the given string length l.  If the string fits,
+ * nothing is done.  If the string would be/was truncated, the size of
+ * the buffer is increased using cmdserv_connection_resize_writebuf()
+ * and the macro jumps to label using goto.  If the reallocation
+ * fails, the macro returns from the function it's used in with an
+ * exit code of -1, errno will be set by
+ * cmdserv_connection_resize_writebuf().
+ *
+ * If the given length l is zero or negative, the macro immediately
+ * returns from the function it's used in with an exit code of l.
+ */
+#define WRITEBUF_CHECK_AND_RESIZE(o, l, a, label) do {                  \
+    if ((a) == -1)                                                      \
+      return (a);                                                       \
+    (l) += (a);                                                         \
+    if ((l) >= (o)->writebuf_size) {                                    \
+      if (cmdserv_connection_resize_writebuf((o), (l) + 1) == NULL)     \
+        return -1;                                                      \
+      (l) = 0;                                                          \
+      goto label;                                                       \
+    }                                                                   \
+  } while (0)
+
+
+/**
  * Special internal states of the connection object.
  *
  * These states exist to deal with only one particular situation: If a
@@ -71,6 +107,9 @@ struct cmdserv_connection {
   time_t time_connect;            /**< time of client connection      */
   time_t time_last;               /**< time of last client activity   */
 
+  ssize_t writebuf_size;          /**< maximum size of write buffer   */
+  char *writebuf;                 /**< buffer for snprintf() strings  */
+
   size_t readbuf_size;            /**< maximum size of read buffer    */
   char *buf;                      /**< data read buffer               */
   size_t buflen;                  /**< current length of read buffer  */
@@ -110,6 +149,8 @@ struct cmdserv_connection {
 
 static void cmdserv_connection_handle_line(cmdserv_connection* self);
 static void cmdserv_connection_free(cmdserv_connection* self);
+static void *cmdserv_connection_resize_writebuf(cmdserv_connection* self,
+                                                ssize_t size);
 
 int cmdserv_connection_fd(cmdserv_connection* self) {
   return self->fd;
@@ -161,20 +202,35 @@ cmdserv_connection_log(cmdserv_connection* self,
 }
 
 
-void __attribute__ ((format (printf, 3, 4)))
+ssize_t __attribute__ ((format (printf, 3, 4)))
 cmdserv_connection_send_status(cmdserv_connection* self,
                                int status,
                                const char *fmt, ...) {
   va_list args;
+  ssize_t len = 0, added;
 
   if (status < 100 || status > 999)
     status = 500;
 
-  dprintf(self->fd, "%03d ", status);
+ CMDSERV_CONNECTION_SEND_STATUS_REDO:
+  added = snprintf(self->writebuf + len,
+                   self->writebuf_size - len,
+                   "%03d ", status);
+  WRITEBUF_CHECK_AND_RESIZE(self, len, added, CMDSERV_CONNECTION_SEND_STATUS_REDO);
+
   va_start(args, fmt);
-  vdprintf(self->fd, fmt, args);
+  added = vsnprintf(self->writebuf + len,
+                    self->writebuf_size - len,
+                    fmt, args);
   va_end(args);
-  dprintf(self->fd, "\r\n");
+  WRITEBUF_CHECK_AND_RESIZE(self, len, added, CMDSERV_CONNECTION_SEND_STATUS_REDO);
+
+  added = snprintf(self->writebuf + len,
+                   self->writebuf_size - len,
+                   "%s", EOL(self));
+  WRITEBUF_CHECK_AND_RESIZE(self, len, added, CMDSERV_CONNECTION_SEND_STATUS_REDO);
+
+  return cmdserv_connection_send(self, self->writebuf, len, MSG_NOSIGNAL);
 }
 
 ssize_t cmdserv_connection_send(cmdserv_connection* self,
@@ -184,23 +240,39 @@ ssize_t cmdserv_connection_send(cmdserv_connection* self,
   return send(self->fd, buf, nbyte, flags);
 }
 
-void cmdserv_connection_print(cmdserv_connection* self,
-                              const char *str) {
-  dprintf(self->fd, "%s", str);
+ssize_t cmdserv_connection_print(cmdserv_connection* self,
+                                 const char *str) {
+  return cmdserv_connection_send(self,
+                                 str,
+                                 strlen(str),
+                                 MSG_NOSIGNAL);
 }
 
-void cmdserv_connection_println(cmdserv_connection* self,
-                                const char *str) {
-  dprintf(self->fd, "%s\r\n", str);
+ssize_t cmdserv_connection_println(cmdserv_connection* self,
+                                   const char *str) {
+  return cmdserv_connection_printf(self, "%s%s", str, EOL(self));
 }
 
-void __attribute__ ((format (printf, 2, 3)))
+ssize_t __attribute__ ((format (printf, 2, 3)))
 cmdserv_connection_printf(cmdserv_connection* self,
                           const char *fmt, ...) {
+  ssize_t sent;
   va_list args;
   va_start(args, fmt);
-  vdprintf(self->fd, fmt, args);
+  sent = cmdserv_connection_vprintf(self, fmt, args);
   va_end(args);
+  return sent;
+}
+
+ssize_t cmdserv_connection_vprintf(cmdserv_connection* self,
+                                   const char *fmt, va_list ap) {
+  ssize_t len = 0, added;
+
+ CMDSERV_CONNECTION_VPRINTF_REDO:
+  added = vsnprintf(self->writebuf, self->writebuf_size, fmt, ap);
+  WRITEBUF_CHECK_AND_RESIZE(self, len, added, CMDSERV_CONNECTION_VPRINTF_REDO);
+
+  return cmdserv_connection_send(self, self->writebuf, len, MSG_NOSIGNAL);
 }
 
 void cmdserv_connection_close(cmdserv_connection* self,
@@ -249,7 +321,7 @@ void cmdserv_connection_read(cmdserv_connection* self) {
   for (size_t i = oldbuflen; i < self->buflen; i++) {
     if (self->buf[i] == '\n'
         && (self->lineterm == CMDSERV_LINETERM_LF
-            || self->lineterm == CMDSERV_LINETERM_LF_OR_CRLF
+            || self->lineterm == CMDSERV_LINETERM_CRLF_OR_LF
             || (self->lineterm == CMDSERV_LINETERM_CRLF
                 && i > 0 && self->buf[i - 1] == '\r'))) {
 
@@ -260,7 +332,7 @@ void cmdserv_connection_read(cmdserv_connection* self) {
       } else {
         self->buf[i] = '\0';
         if (self->lineterm == CMDSERV_LINETERM_CRLF
-            || (self->lineterm == CMDSERV_LINETERM_LF_OR_CRLF
+            || (self->lineterm == CMDSERV_LINETERM_CRLF_OR_LF
                 && i > 0 && self->buf[i - 1] == '\r'))
           self->buf[i - 1] = '\0';
 
@@ -328,13 +400,14 @@ cmdserv_connection
     .clientport    = { '\0' },
     .time_connect  = time(NULL),
     .time_last     = time(NULL),
+    .writebuf_size = 1024,
     .readbuf_size  = config->readbuf_size,
     .buflen        = 0,
     .overflow      = false,
     .argc_max      = config->argc_max,
     .state         = CMDSERV_CONNECTION_STATE_DEFAULT,
     .close_reason  = CMDSERV_NO_CLOSE,
-    .lineterm      = CMDSERV_LINETERM_LF,
+    .lineterm      = CMDSERV_LINETERM_CRLF_OR_LF,
     .rawmode       = false,
     .cmd_handler   = config->cmd_handler,
     .cmd_object    = config->cmd_object,
@@ -351,6 +424,9 @@ cmdserv_connection
   self->argv[0] = NULL;
 
   if ((self->buf = calloc(self->readbuf_size, sizeof(char))) == NULL)
+    goto CMDSERV_CONNECTION_ABORT;
+
+  if ((self->writebuf = calloc(self->writebuf_size, sizeof(char))) == NULL)
     goto CMDSERV_CONNECTION_ABORT;
 
   self->fd = accept(listener_fd,
@@ -439,6 +515,7 @@ static void cmdserv_connection_free(cmdserv_connection* self) {
 
   free(self->argv);
   free(self->buf);
+  free(self->writebuf);
 
   /* Be paranoid and zero out before freeing. */
   *self = (struct cmdserv_connection){
@@ -447,4 +524,28 @@ static void cmdserv_connection_free(cmdserv_connection* self) {
   };
 
   free(self);
+}
+
+static void *cmdserv_connection_resize_writebuf(cmdserv_connection* self,
+                                                ssize_t req_size) {
+  ssize_t new_size = self->writebuf_size;
+  char *new_writebuf;
+
+  while (req_size > new_size)
+    new_size *= 2;
+
+  if (new_size == self->writebuf_size)
+    return self->writebuf;
+
+  if ((new_writebuf = realloc(self->writebuf, new_size)) == NULL)
+    return NULL;
+
+  cmdserv_connection_log(self, CMDSERV_INFO,
+                         "Increased writebuf_size from %ld to %ld octets",
+                         (long)self->writebuf_size, (long)new_size);
+
+  self->writebuf_size = new_size;
+  self->writebuf      = new_writebuf;
+
+  return self->writebuf;
 }

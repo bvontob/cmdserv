@@ -76,6 +76,10 @@ enum cmdserv_close_reason {
 /**
  * Configure end-of-line character modes.
  *
+ * This affects parsing of input, but also the end-of-line characters
+ * by methods such as cmdserv_connection_println() or
+ * cmdserv_connection_send_status().
+ *
  * @todo
  *
  *     Further modes could be added if needed: CMDSERV_LINETERM_CR for
@@ -107,14 +111,17 @@ enum cmdserv_lineterm {
   CMDSERV_LINETERM_LF,
 
   /**
-   * Lines are terminated by LF or CRLF.
+   * Lines are terminated by LF or CRLF on input, by CRLF on output.
    *
    * In this mode the line parser will accept a lone LF as line
    * termination as well as a CR-LF-sequence.  Both will be cut off.
    * The information on what terminated the line will be lost even for
    * raw line mode.
+   *
+   * For sending, all methods that append an end-of-line marker
+   * automatically will use CRLF in this mode.
    */
-  CMDSERV_LINETERM_LF_OR_CRLF,
+  CMDSERV_LINETERM_CRLF_OR_LF,
 
   /**
    * Lines are terminated by CRLF.
@@ -296,12 +303,15 @@ void cmdserv_connection_vlog(cmdserv_connection* connection,
  * @param fmt
  *
  *     Further arguments are the human-readable part of the status
- *     line in sprintf() format. A CR-LF-sequence ("\r\n") is
- *     automatically appended and should not be added to the string.
+ *     line in sprintf() format. The correct line terminator is
+ *     automatically appended depending on the current setting from
+ *     enum cmdserv_lineterm and should not be added to the string.
+ *
+ * @return The number of octets actually sent or -1 for errors.
  */
-void cmdserv_connection_send_status(cmdserv_connection* connection,
-                                    int status,
-                                    const char *fmt, ...);
+ssize_t cmdserv_connection_send_status(cmdserv_connection* connection,
+                                       int status,
+                                       const char *fmt, ...);
 
 
 /**
@@ -332,7 +342,7 @@ void cmdserv_connection_send_status(cmdserv_connection* connection,
  *     Flags handed over to send().  Pass in MSG_NOSIGNAL unless you
  *     have installed a signal handler for SIGPIPE.
  *
- * @return The number of bytes actually written or -1 for errors.
+ * @return The number of octets actually sent or -1 for errors.
  */
 ssize_t cmdserv_connection_send(cmdserv_connection* connection,
                                 const void *buf,
@@ -341,12 +351,17 @@ ssize_t cmdserv_connection_send(cmdserv_connection* connection,
 
 
 /**
- * Write a zero-terminated string to the connection.
+ * Send a zero-terminated string over the connection.
  *
  * The string will be written without the terminating zero and without
- * a line break.
+ * a line break.  This is just a tiny convenience wrapper around
+ * cmdserv_connection_send(), determining the size of the string using
+ * strlen() and calling cmdserv_connection_send() with it.  There's no
+ * further overhad associated with this call, as for all the other
+ * printf()-like methods.
  *
  * @see cmdserv_connection_println() cmdserv_connection_printf()
+ *    cmdserv_connection_send()
  *
  * @param connection
  *
@@ -355,19 +370,21 @@ ssize_t cmdserv_connection_send(cmdserv_connection* connection,
  * @param str
  *
  *     A zero-terminated string to write.
+ *
+ * @return The number of octets actually sent or -1 for errors.
  */
-void cmdserv_connection_print(cmdserv_connection* connection,
-                              const char *str);
+ssize_t cmdserv_connection_print(cmdserv_connection* connection,
+                                 const char *str);
 
 
 /**
  * Write a zero-terminated string followed by a line break.
  *
- * A standard network line terminator (CR-LF-sequence) will
- * automatically be appended to the string when being sent on the
- * client connection.
+ * The correct line terminator is automatically appended depending on
+ * the current setting from enum cmdserv_lineterm.
  *
  * @see cmdserv_connection_print() cmdserv_connection_printf()
+ *     cmdserv_connection_vprintf()
  *
  * @param connection
  *
@@ -376,15 +393,18 @@ void cmdserv_connection_print(cmdserv_connection* connection,
  * @param str
  *
  *     A zero-terminated string to write.
+ *
+ * @return The number of octets actually sent or -1 for errors.
  */
-void cmdserv_connection_println(cmdserv_connection* connection,
-                                const char *str);
+ssize_t cmdserv_connection_println(cmdserv_connection* connection,
+                                   const char *str);
 
 
 /**
  * Write a formatted string to the connection.
  *
  * @see cmdserv_connection_print() cmdserv_connection_println()
+ *     cmdserv_connection_vprintf()
  *
  * @param connection
  *
@@ -394,9 +414,35 @@ void cmdserv_connection_println(cmdserv_connection* connection,
  *
  *     The following arguments are exactly as for your systems
  *     printf().
+ *
+ * @return The number of octets actually sent or -1 for errors.
  */
-void cmdserv_connection_printf(cmdserv_connection* connection,
-                               const char *fmt, ...);
+ssize_t cmdserv_connection_printf(cmdserv_connection* connection,
+                                  const char *fmt, ...);
+
+
+/**
+ * Write a formatted string to the connection.
+ *
+ * @see cmdserv_connection_print() cmdserv_connection_println()
+ *     cmdserv_connection_printf()
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object to write on.
+ *
+ * @param fmt
+ *
+ *     The format. As for your system's vprintf().
+ *
+ * @param ap
+ *
+ *     Argument list. As for your system's vprintf().
+ *
+ * @return The number of octets actually sent or -1 for errors.
+ */
+ssize_t cmdserv_connection_vprintf(cmdserv_connection* connection,
+                                   const char *fmt, va_list ap);
 
 
 /**
