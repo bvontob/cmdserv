@@ -7,6 +7,7 @@
 #define MAXCONNS  256
 #define MAXBUFLEN 256
 
+
 int main(int argc, char** argv) {
   int fd[MAXCONNS];
   ssize_t conns;
@@ -49,9 +50,11 @@ int main(int argc, char** argv) {
      * chances are too high, that the cmdserv gets multiple close
      * operations at once and works through them in a different order.
      */
-    while (fcntl(fd[conns], F_GETFD) != -1) {
-      sleep(0);
-    }
+    while (fcntl(fd[conns], F_GETFD) != -1)
+      if (millisleep(1) == -1)
+        err(EXIT_FAILURE, "millisleep()");
+    if (millisleep(5) == -1)
+      err(EXIT_FAILURE, "millisleep()");
 
     info("#%d closed.", fd[conns]);
   }

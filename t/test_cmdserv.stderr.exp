@@ -13,14 +13,14 @@ cmdserv <info>: #6 closing
 cmdserv <info>: #7 connected from [::1]:20016
 cmdserv <warning>: too many connections, turning #7 away
 cmdserv <info>: #7 closing
-cmdserv <info>: #2 client disconnect
-cmdserv <info>: #2 closing
-cmdserv <info>: #3 client disconnect
-cmdserv <info>: #3 closing
-cmdserv <info>: #4 client disconnect
-cmdserv <info>: #4 closing
 cmdserv <info>: #5 client disconnect
 cmdserv <info>: #5 closing
+cmdserv <info>: #4 client disconnect
+cmdserv <info>: #4 closing
+cmdserv <info>: #3 client disconnect
+cmdserv <info>: #3 closing
+cmdserv <info>: #2 client disconnect
+cmdserv <info>: #2 closing
 cmdserv <info>: #8 connected from [::1]:20021
 cmdserv <info>: #9 connected from [::1]:20022
 cmdserv <info>: #10 connected from [::1]:20023
@@ -31,14 +31,14 @@ cmdserv <info>: #12 closing
 cmdserv <info>: #13 connected from [::1]:20026
 cmdserv <warning>: too many connections, turning #13 away
 cmdserv <info>: #13 closing
-cmdserv <info>: #8 client disconnect
-cmdserv <info>: #8 closing
-cmdserv <info>: #9 client disconnect
-cmdserv <info>: #9 closing
-cmdserv <info>: #10 client disconnect
-cmdserv <info>: #10 closing
 cmdserv <info>: #11 client disconnect
 cmdserv <info>: #11 closing
+cmdserv <info>: #10 client disconnect
+cmdserv <info>: #10 closing
+cmdserv <info>: #9 client disconnect
+cmdserv <info>: #9 closing
+cmdserv <info>: #8 client disconnect
+cmdserv <info>: #8 closing
 -- TESTCASE 3 --
 cmdserv <info>: #14 connected from [::1]:30001
 cmdserv <info>: #14 client disconnect

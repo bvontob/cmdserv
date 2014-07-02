@@ -1,8 +1,10 @@
 #include "clientlib.h"
 
+#include <errno.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <time.h>
 
 #define HOSTBUFLEN  256
 #define PORTBUFLEN  16
@@ -151,4 +153,21 @@ void cmdserv_close(int fd) {
   if (close(fd) != 0)
     err(EXIT_FAILURE, "close(#%d)", fd);
   info("#%d closed", fd);
+}
+
+int millisleep(unsigned int ms) {
+  struct timespec in, rest;
+  int res;
+
+  rest = (struct timespec) {
+    .tv_sec  = ms / 1000,
+    .tv_nsec = (ms % 1000) * 1000 * 1000
+  };
+
+  do {
+    in  = rest;
+    res = nanosleep(&in, &rest);
+  } while (res != 0 && errno == EINTR);
+
+  return res;
 }

@@ -13,4 +13,6 @@ void cmdserv_relay(int in_fd, int out_fd);
 
 void cmdserv_close(int fd);
 
+int millisleep(unsigned int ms);
+
 #endif /* CLIENTLIB_H */
