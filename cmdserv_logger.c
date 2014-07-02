@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-char *cmdserv_logseverity_string(enum cmdserv_logseverity severity) {
+const char *cmdserv_logseverity_string(enum cmdserv_logseverity severity) {
   switch (severity) {
   case CMDSERV_ERR:
     return "err";

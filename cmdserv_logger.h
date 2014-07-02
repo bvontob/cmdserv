@@ -69,7 +69,7 @@ enum cmdserv_logseverity {
  *
  * @see cmdserv_logseverity
  */
-char *cmdserv_logseverity_string(enum cmdserv_logseverity severity);
+const char *cmdserv_logseverity_string(enum cmdserv_logseverity severity);
 
 
 /**

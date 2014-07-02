@@ -16,7 +16,7 @@ int src_port = 0;
 int cmdserv_connect(int argc, char** argv) {
   struct addrinfo* ai;
   char *host = NULL;
-  char *port = DEFAULTPORT;
+  const char *port = DEFAULTPORT;
   int ai_res;
   int fd = -1;
   char realhost[HOSTBUFLEN], realport[PORTBUFLEN];

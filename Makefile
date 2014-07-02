@@ -5,8 +5,7 @@ OBJS   := cmdserv_tokenize.o          \
 	  cmdserv_connection_config.o \
 	  cmdserv_connection.o        \
 	  cmdserv.o
-# TO DO: Add -Wwrite-strings and make code compile with it
-CFLAGS := -Wall -Wextra -pedantic -Werror \
+CFLAGS := -Wall -Wextra -Wwrite-strings -pedantic -Werror \
 	  -D_POSIX_C_SOURCE=200809L \
           -fstack-protector-all
 TESTS  := t/test_cmdserv_tokenize \
