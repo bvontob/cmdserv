@@ -1,6 +1,7 @@
 #include "cmdserv_logger.h"
 
 #include <stdio.h>
+#include <unistd.h>
 
 const char *cmdserv_logseverity_string(enum cmdserv_logseverity severity) {
   switch (severity) {
@@ -22,7 +23,7 @@ void cmdserv_logger_stderr(void* object,
                            const char* msg) {
   (void)object; /* UNUSED */
 
-  dprintf(2, "cmdserv <%s>: %s\n",
+  dprintf(STDERR_FILENO, "cmdserv <%s>: %s\n",
           cmdserv_logseverity_string(severity),
           msg);
 }

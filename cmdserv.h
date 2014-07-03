@@ -128,9 +128,10 @@ void cmdserv_shutdown(cmdserv* serv);
  *     The following arguments are the human readable message in
  *     sprintf() format.
  */
-void cmdserv_log(cmdserv* serv,
-                 enum cmdserv_logseverity severity,
-                 const char *fmt, ...);
+void __attribute__ ((format (printf, 3, 4)))
+cmdserv_log(cmdserv* serv,
+            enum cmdserv_logseverity severity,
+            const char *fmt, ...);
 
 /**
  * Log a server-related event, va_list version.
@@ -153,9 +154,10 @@ void cmdserv_log(cmdserv* serv,
  *
  *     Arguments to format.
  */
-void cmdserv_vlog(cmdserv* serv,
-                  enum cmdserv_logseverity severity,
-                  const char *fmt, va_list ap);
+void __attribute__ ((format (printf, 3, 0)))
+cmdserv_vlog(cmdserv* serv,
+             enum cmdserv_logseverity severity,
+             const char *fmt, va_list ap);
 
 
 /**

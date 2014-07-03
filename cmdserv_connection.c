@@ -175,9 +175,10 @@ char *cmdserv_connection_client(cmdserv_connection* self) {
   return out;
 }
 
-void cmdserv_connection_vlog(cmdserv_connection* self,
-                             enum cmdserv_logseverity severity,
-                             const char *fmt, va_list ap) {
+void __attribute__ ((format (printf, 3, 0)))
+cmdserv_connection_vlog(cmdserv_connection* self,
+                        enum cmdserv_logseverity severity,
+                        const char *fmt, va_list ap) {
   if (self->log_handler) {
     char *msg  = NULL;
     char *cfmt = NULL;
@@ -264,8 +265,9 @@ cmdserv_connection_printf(cmdserv_connection* self,
   return sent;
 }
 
-ssize_t cmdserv_connection_vprintf(cmdserv_connection* self,
-                                   const char *fmt, va_list ap) {
+ssize_t __attribute__ ((format (printf, 2, 0)))
+cmdserv_connection_vprintf(cmdserv_connection* self,
+                           const char *fmt, va_list ap) {
   ssize_t len = 0, added;
 
  CMDSERV_CONNECTION_VPRINTF_REDO:

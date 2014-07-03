@@ -50,8 +50,9 @@ void cmdserv_close_handler(void *close_object,
                            cmdserv_connection *connection,
                            enum cmdserv_close_reason reason);
 
-void cmdserv_vlog(cmdserv* self, enum cmdserv_logseverity severity,
-                  const char *fmt, va_list ap) {
+void __attribute__ ((format (printf, 3, 0)))
+cmdserv_vlog(cmdserv* self, enum cmdserv_logseverity severity,
+             const char *fmt, va_list ap) {
   if (self->log_handler) {
     char *msg = NULL;
     if (vasprintf(&msg, fmt, ap) >= 0) {

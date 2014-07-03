@@ -243,9 +243,10 @@ void cmdserv_connection_close(cmdserv_connection* connection,
  *     The following arguments are the human readable message in
  *     sprintf() format.
  */
-void cmdserv_connection_log(cmdserv_connection* connection,
-                            enum cmdserv_logseverity severity,
-                            const char *fmt, ...);
+void __attribute__ ((format (printf, 3, 4)))
+cmdserv_connection_log(cmdserv_connection* connection,
+                       enum cmdserv_logseverity severity,
+                       const char *fmt, ...);
 
 /**
  * Log a connection-related event, va_list version.
@@ -270,9 +271,10 @@ void cmdserv_connection_log(cmdserv_connection* connection,
  *
  *     Arguments to format.
  */
-void cmdserv_connection_vlog(cmdserv_connection* connection,
-                             enum cmdserv_logseverity severity,
-                             const char *fmt, va_list ap);
+void __attribute__ ((format (printf, 3, 0)))
+cmdserv_connection_vlog(cmdserv_connection* connection,
+                        enum cmdserv_logseverity severity,
+                        const char *fmt, va_list ap);
 
 
 /**
@@ -309,9 +311,10 @@ void cmdserv_connection_vlog(cmdserv_connection* connection,
  *
  * @return The number of octets actually sent or -1 for errors.
  */
-ssize_t cmdserv_connection_send_status(cmdserv_connection* connection,
-                                       int status,
-                                       const char *fmt, ...);
+ssize_t __attribute__ ((format (printf, 3, 4)))
+cmdserv_connection_send_status(cmdserv_connection* connection,
+                               int status,
+                               const char *fmt, ...);
 
 
 /**
@@ -417,8 +420,9 @@ ssize_t cmdserv_connection_println(cmdserv_connection* connection,
  *
  * @return The number of octets actually sent or -1 for errors.
  */
-ssize_t cmdserv_connection_printf(cmdserv_connection* connection,
-                                  const char *fmt, ...);
+ssize_t __attribute__ ((format (printf, 2, 3)))
+cmdserv_connection_printf(cmdserv_connection* connection,
+                          const char *fmt, ...);
 
 
 /**
