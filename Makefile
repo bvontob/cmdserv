@@ -6,7 +6,7 @@ OBJS   := cmdserv_tokenize.o          \
 	  cmdserv_connection.o        \
 	  cmdserv.o
 CFLAGS := -Wall -Wextra -pedantic -Werror \
-	  -Wwrite-strings -Wshadow -Wundef -Wformat=2 \
+	  -Wwrite-strings -Wshadow -Wundef -Wformat \
 	  -Wcast-align -Wcast-qual -Wfloat-equal \
 	  -D_POSIX_C_SOURCE=200809L \
           -fstack-protector-all
