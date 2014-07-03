@@ -5,7 +5,9 @@ OBJS   := cmdserv_tokenize.o          \
 	  cmdserv_connection_config.o \
 	  cmdserv_connection.o        \
 	  cmdserv.o
-CFLAGS := -Wall -Wextra -Wwrite-strings -pedantic -Werror \
+CFLAGS := -Wall -Wextra -pedantic -Werror \
+	  -Wwrite-strings -Wshadow -Wundef -Wformat=2 \
+	  -Wcast-align -Wcast-qual -Wfloat-equal \
 	  -D_POSIX_C_SOURCE=200809L \
           -fstack-protector-all
 TESTS  := t/test_cmdserv_tokenize \
