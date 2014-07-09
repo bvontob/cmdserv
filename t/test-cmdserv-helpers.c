@@ -27,27 +27,45 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ARGC_MAX 4
-
 int main(void) {
   char *data = NULL;
+  char *func;
   size_t len;
   long int begin, end;
   char *token;
 
   for (int line = 1; getline(&data, &len, stdin) != -1; line++) {
     if ((token = strtok(data, " ")) == NULL)
-      errx(EXIT_FAILURE, "Missing begin duration on line %d", line);
-    begin = atol(token);
+      errx(EXIT_FAILURE, "Missing function specification on line %d", line);
+    func = token;
+    
+    if (strcmp(func, "cmdserv_duration_str") == 0) {
+      if ((token = strtok(NULL, " ")) == NULL)
+        errx(EXIT_FAILURE, "Missing begin duration on line %d", line);
+      begin = atol(token);
+      
+      if ((token = strtok(NULL, "|")) == NULL)
+        errx(EXIT_FAILURE, "Missing end duration on line %d", line);
+      end = atol(token);
 
-    if ((token = strtok(NULL, " ")) == NULL)
-      errx(EXIT_FAILURE, "Missing end duration on line %d", line);
-    end = atol(token);
+      printf("%s %ld %ld|%s\n",
+             func, begin, end,
+             cmdserv_duration_str((time_t)begin, (time_t)end));
 
-    printf("%ld %ld %s\n",
-           begin, end,
-           cmdserv_duration_str((time_t)begin, (time_t)end));
+    } else if (strcmp(func, "cmdserv_logsafe_str") == 0) {
+      if ((token = strtok(NULL, "|")) == NULL)
+        errx(EXIT_FAILURE, "Missing input string on line %d", line);
 
+      printf("%s %s|%s\n",
+             func, token,
+             cmdserv_logsafe_str(token));
+
+    } else {
+      errx(EXIT_FAILURE, "Unknown function specification '%s' on line %d",
+           func, line);
+    }
+
+    func = NULL;
     free(data);
     data = NULL;
   }

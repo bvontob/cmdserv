@@ -57,4 +57,34 @@
  */
 char* cmdserv_duration_str(time_t begin, time_t end);
 
+
+/**
+ * Replaces everything but printable US-ASCII characters in
+ * zero-terminated string s.
+ *
+ * The backslash character '\' (0x5c) is used as an escape character
+ * and thus doubled if it occurs in the input string.  All octets with
+ * a value below the space character ' ' (0x20), note that this also
+ * includes the carriage return and newline characters, and above the
+ * tilde character '~' (0x7e) are escaped with a 4-character sequence
+ * consisting of the backslash and 3 octal digits representing the
+ * value of the octet ("\ooo").
+ *
+ * This function is not re-entrant.  The buffer for the returned
+ * string is statically allocated and limited to 512 octets.  Do not
+ * call free() on it.  And not that it will be overwritten ty the next
+ * call to this function.
+ *
+ * If the input string results in an output string that would not fit
+ * safely into the 512 octet buffer, the rest of the string is
+ * truncated and the output string appended with three dots "...".
+ *
+ * @param s
+ *
+ *     Zero-terminated input string.
+ *
+ * @return Zero-terminated output string.
+ */
+char* cmdserv_logsafe_str(const char *s);
+
 #endif /* CMDSERV_HELPERS_H */

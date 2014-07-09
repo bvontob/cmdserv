@@ -42,3 +42,35 @@ char* cmdserv_duration_str(time_t begin, time_t end) {
 
   return duration;
 }
+
+
+#define LOGSAFE_BUFLEN 512
+
+static char logsafe_string[LOGSAFE_BUFLEN];
+
+char* cmdserv_logsafe_str(const char *s) {
+  size_t i;
+
+  for (i = 0; *s != '\0' && i < (LOGSAFE_BUFLEN - (4 + 3 + 1)); s++) {
+    if (*s >= ' ' && *s <= '~') {
+      if (*s == '\\')
+        logsafe_string[i++] = '\\';
+      logsafe_string[i++] = *s;
+    } else {
+      logsafe_string[i++] = '\\';
+      logsafe_string[i++] = ((*s)        >> 6) + '0';
+      logsafe_string[i++] = ((*s & 0070) >> 3) + '0';
+      logsafe_string[i++] = ((*s & 0007)     ) + '0';
+    }
+  }
+
+  if (*s != '\0') {
+    logsafe_string[i++] = '.';
+    logsafe_string[i++] = '.';
+    logsafe_string[i++] = '.';
+  }
+  
+  logsafe_string[i] = '\0';
+  
+  return logsafe_string;
+}
