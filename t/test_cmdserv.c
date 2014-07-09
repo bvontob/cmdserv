@@ -79,6 +79,8 @@ void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **
     cmdserv_connection_println(connection, "      Retrieve global string from server.");
     cmdserv_connection_println(connection, "  server status");
     cmdserv_connection_println(connection, "      Display server status.");
+    cmdserv_connection_println(connection, "  parse [ARGS...]");
+    cmdserv_connection_println(connection, "      Echo back the parsed command string.");
     cmdserv_connection_println(connection, "  server shutdown");
     cmdserv_connection_println(connection, "      Disconnect all clients and shutdown.");
     cmdserv_connection_println(connection, "  exit/quit/disconnect");
@@ -113,6 +115,11 @@ void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **
     cmdserv_connection_println(connection, value);
     cmdserv_connection_send_status(connection, 200, "OK");
     
+  } else if (strcmp("parse", argv[0]) == 0) { /* parse */
+    cmdserv_connection_send_status(connection, 200,
+                                   "%s",
+                                   cmdserv_connection_command_string(connection,
+                                                                     CMDSERV_LOG_SAFE));
 
   } else if (strcmp("server", argv[0]) == 0) { /* server control commands */
     if (argc != 2)

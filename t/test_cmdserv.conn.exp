@@ -25,4 +25,5 @@ testcase
 101 Ready
 testcase
 200 OK
+200 "parse" "This" "is" "a" "nice command!"
 200 OK

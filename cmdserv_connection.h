@@ -138,6 +138,18 @@ enum cmdserv_lineterm {
 
 
 /**
+ * For future expansion.
+ *
+ * Currently only one possible treatment is defined.
+ *
+ * @see cmdserv_connection_command_string()
+ */
+enum cmdserv_string_treatment {
+  CMDSERV_LOG_SAFE = 1,   /**< Escape everything outside printable US-ASCII */
+};
+
+
+/**
  * The object representing one active client connection.
  */
 typedef struct cmdserv_connection cmdserv_connection;
@@ -275,6 +287,27 @@ void __attribute__ ((format (printf, 3, 0)))
 cmdserv_connection_vlog(cmdserv_connection* connection,
                         enum cmdserv_logseverity severity,
                         const char *fmt, va_list ap);
+
+
+/**
+ * Returns a string representation of the parsed, currently handled
+ * command.
+ *
+ * The zero-terminated string is suitable for logging.  It might be
+ * truncated to below 512 characters.  Non-printable characters are
+ * replaced by escape sequences.
+ *
+ * The method is not re-entrant.  It's also only valid to call it from
+ * within a command handler.
+ *
+ * @param trtmt
+ *
+ *     Processing done on the string.  Currently ignored.
+ *
+ * @return A zero-terminated string, statically allocated.
+ */
+char *cmdserv_connection_command_string(cmdserv_connection* connection,
+                                        enum cmdserv_string_treatment trtmt);
 
 
 /**

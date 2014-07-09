@@ -39,7 +39,7 @@ rm -f $TEST_OUT_ALL
 touch $TEST_OUT_ALL
 
 # Start the server to test with, possibly using valgrind
-`which valgrind >/dev/null && echo "valgrind -q --error-exitcode=99"` \
+`which valgrind >/dev/null && echo "valgrind -q --error-exitcode=99 --track-origins=yes"` \
     ./t/test_cmdserv \
     <  /dev/null \
     1>> t/test_cmdserv.stdout \
@@ -85,7 +85,7 @@ printf "value get\r\server status\r\nvalue get\r\n" \
 
 __TESTCASE__ 4
 
-printf "value get\r\nserver shutdown\r\n" \
+printf "value get\r\nparse This is a \"nice command!\"\r\nserver shutdown\r\n" \
     | $NETCAT -p $SOURCE_PORT -q5 $CMDSERV_HOST $CMDSERV_PORT \
     >> t/test_cmdserv.conn
 

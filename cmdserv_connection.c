@@ -16,6 +16,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "cmdserv_helpers.h"
 #include "cmdserv_connection.h"
 #include "cmdserv_connection_config.h"
 #include "cmdserv_tokenize.h"
@@ -174,6 +175,32 @@ char *cmdserv_connection_client(cmdserv_connection* self) {
   if (asprintf(&out, "[%s]:%s", self->clienthost, self->clientport) == -1)
     return NULL;
   return out;
+}
+
+char *cmdserv_connection_command_string(cmdserv_connection* self,
+                                        enum cmdserv_string_treatment trtmt) {
+  (void)trtmt;
+  char *a = strdup("");
+  char *b = NULL;
+  int len;
+  
+  for (int i = 0; i < self->argc; i++) {
+    if ((len = asprintf(&b, "%s\"%s\" ", a, self->argv[i])) == -1) {
+      free(a);
+      return NULL;
+    }
+    free(a);
+    a = b;
+    b = NULL;
+  }
+
+  /* Cut off additional space */
+  if (len > 0)
+    a[len - 1] = '\0';
+  
+  b = cmdserv_logsafe_str(a);
+  free(a);
+  return b;
 }
 
 void __attribute__ ((format (printf, 3, 0)))
@@ -382,6 +409,9 @@ static void cmdserv_connection_handle_line(cmdserv_connection *self) {
     if (self->cmd_handler)
       self->cmd_handler(self->cmd_object, self, self->argc, self->argv);
   }
+
+  self->argc    = 0;
+  self->argv[0] = NULL;
 }
 
 cmdserv_connection
