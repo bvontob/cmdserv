@@ -117,6 +117,7 @@ struct cmdserv_connection {
 
   unsigned int argc_max;          /**< size of argv (without NULL)    */
   char **argv;                    /**< parsed command arguments       */
+  int argc;                       /**< number of parsed command args  */
 
   enum cmdserv_state state;       /**< special object states          */
 
@@ -365,23 +366,21 @@ void cmdserv_connection_read(cmdserv_connection* self) {
 }
 
 static void cmdserv_connection_handle_line(cmdserv_connection *self) {
-  int argc = 0;
-
   if (self->rawmode) {
     self->argv[0] = self->buf;
     self->argv[1] = NULL;
-    argc = 1;
+    self->argc = 1;
   } else {
-    argc = cmdserv_tokenize(self->buf, self->argv, self->argc_max + 1);
+    self->argc = cmdserv_tokenize(self->buf, self->argv, self->argc_max + 1);
   }
 
-  if (argc == -1) {
+  if (self->argc == -1) {
     cmdserv_connection_log(self, CMDSERV_WARNING,
                            "too many arguments in command");
     cmdserv_connection_send_status(self, 400, "Too many arguments");
   } else {
     if (self->cmd_handler)
-      self->cmd_handler(self->cmd_object, self, argc, self->argv);
+      self->cmd_handler(self->cmd_object, self, self->argc, self->argv);
   }
 }
 
