@@ -297,9 +297,12 @@ ssize_t __attribute__ ((format (printf, 2, 0)))
 cmdserv_connection_vprintf(cmdserv_connection* self,
                            const char *fmt, va_list ap) {
   ssize_t len = 0, added;
+  va_list ap2;
 
  CMDSERV_CONNECTION_VPRINTF_REDO:
-  added = vsnprintf(self->writebuf, self->writebuf_size, fmt, ap);
+  va_copy(ap2, ap);
+  added = vsnprintf(self->writebuf, self->writebuf_size, fmt, ap2);
+  va_end(ap2);
   WRITEBUF_CHECK_AND_RESIZE(self, len, added, CMDSERV_CONNECTION_VPRINTF_REDO);
 
   return cmdserv_connection_send(self, self->writebuf, len, MSG_NOSIGNAL);
