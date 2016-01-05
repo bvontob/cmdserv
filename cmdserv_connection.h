@@ -300,6 +300,11 @@ cmdserv_connection_vlog(cmdserv_connection* connection,
  * The method is not re-entrant.  It's also only valid to call it from
  * within a command handler.
  *
+ * @param connection
+ *
+ *     The cmdserv connection object through which the status line
+ *     should be sent.
+ *
  * @param trtmt
  *
  *     Processing done on the string.  Currently ignored.
