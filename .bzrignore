@@ -10,3 +10,6 @@ test_cmdserv.stdout
 test_cmdserv.conn
 minimal_cmdserv
 doc/*
+*.gcda
+*.gcno
+*.gcov

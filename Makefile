@@ -40,7 +40,11 @@ default: $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: clean $(BIN) test doc
+all: clean test doc
+
+gcov: CFLAGS += -fprofile-arcs -ftest-coverage -O0
+gcov: clean $(OBJS) test
+	gcov *.c *.h
 
 t/test_cmdserv: t/test_cmdserv.c $(OBJS)
 	$(CC) $(CFLAGS) $< $(OBJS) -o $@
@@ -88,7 +92,10 @@ check: $(TESTS)
 clean:
 	rm -f $(TESTS)
 	rm -rf doc/*
-	find . \(    -name '*~'       \
-                  -o -name '*.o'      \
-	          -o -name '*.tmp' \) \
+	find . \(    -name '*~'       	\
+                  -o -name '*.o'      	\
+	          -o -name '*.tmp' 	\
+	          -o -name '*.gcda'     \
+	          -o -name '*.gcno'     \
+	          -o -name '*.gcov' \) 	\
                -exec rm '{}' \; -print
