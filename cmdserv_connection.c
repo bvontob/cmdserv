@@ -554,8 +554,11 @@ cmdserv_connection
     }
   }
 
-  if (SETSOCKOPT_NOSIGPIPE_UNLESS_MSG_NOSIGNAL(self->fd))
+  if (SETSOCKOPT_NOSIGPIPE_UNLESS_MSG_NOSIGNAL(self->fd)) {
+    cmdserv_connection_log(self, CMDSERV_ERR,
+                           "setsockopt() error: %s", strerror(errno));
     goto CMDSERV_CONNECTION_ABORT;
+  }
 
   cmdserv_connection_log(self, CMDSERV_INFO,
                          "connected from %s",
