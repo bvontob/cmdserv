@@ -22,9 +22,16 @@ else
     exit 1
 fi
 
-# TO DO: Check for server crashes between test cases.
 __TESTCASE__ () {
     sleep 1 # Not nice. But to make sure previous output has been written.
+
+    if ! ps $SERVER_PID >/dev/null 2>&1
+    then
+        echo "Test server seems to have crashed/ended unexpectedly."
+        wait $SERVER_PID
+        exit $?
+    fi
+
     echo "-- TESTCASE $1 --" \
         | tee -ai \
         $TEST_OUT_CLIENT \
@@ -47,10 +54,17 @@ touch $TEST_OUT_ALL
 
 SERVER_PID=$!
 
-echo "Waiting for server to start up..."
+echo "Waiting for test server to start up..."
 while ! grep "ready for connections" t/test_cmdserv.stderr 2>/dev/null
 do
     sleep 1
+    grep "failed cmdserv_start" t/test_cmdserv.stderr 2>/dev/null
+    if ! ps $SERVER_PID >/dev/null 2>&1
+    then
+        echo "Test server did not start up properly."
+        wait $SERVER_PID
+        exit $?
+    fi
 done
 
 

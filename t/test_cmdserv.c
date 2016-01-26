@@ -170,7 +170,7 @@ int main(void) {
   server = cmdserv_start(config);
 
   if (server == NULL)
-    err(EXIT_FAILURE, "cmdserv_start()");
+    err(EXIT_FAILURE, "failed cmdserv_start()");
 
   while (!shutdown)
     cmdserv_sleep(server, &timeout);
