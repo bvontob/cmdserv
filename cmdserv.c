@@ -1,4 +1,8 @@
-#define _GNU_SOURCE /* for asprintf() in stdio.h */
+/* for asprintf() in stdio.h */
+#define _GNU_SOURCE 
+#define _DARWIN_C_SOURCE
+#define _BSD_SOURCE
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>

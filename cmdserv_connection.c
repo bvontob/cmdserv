@@ -1,5 +1,8 @@
-#define _GNU_SOURCE /* for asprintf() in stdio.h */
-#define  DARWIN_C_LEVEL /* for asprintf() in stdio.h */
+/* for asprintf() in stdio.h */
+#define _GNU_SOURCE
+#define _DARWIN_C_SOURCE
+#define _BSD_SOURCE
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -20,6 +23,28 @@
 #include "cmdserv_connection.h"
 #include "cmdserv_connection_config.h"
 #include "cmdserv_tokenize.h"
+
+
+#ifdef MSG_NOSIGNAL
+#define SETSOCKOPT_NOSIGPIPE_UNLESS_MSG_NOSIGNAL(FD) (0)
+#else
+/**
+ * Suppress SIGPIPE using SO_NOSIGPIPE on the socket for systems that
+ * do not have the MSG_NOSIGNAL flag on send().
+ *
+ * @param
+ *
+ *     The socket file descriptor.
+ *
+ * @return
+ *
+ *     0 on success, -1 on failure (in which case global errno will be
+ *     set).
+ */
+#define SETSOCKOPT_NOSIGPIPE_UNLESS_MSG_NOSIGNAL(FD)                    \
+  setsockopt(FD, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int))
+#define MSG_NOSIGNAL 0
+#endif
 
 
 /**
@@ -528,6 +553,9 @@ cmdserv_connection
       goto CMDSERV_CONNECTION_ABORT;
     }
   }
+
+  if (SETSOCKOPT_NOSIGPIPE_UNLESS_MSG_NOSIGNAL(self->fd))
+    goto CMDSERV_CONNECTION_ABORT;
 
   cmdserv_connection_log(self, CMDSERV_INFO,
                          "connected from %s",
