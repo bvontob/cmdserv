@@ -22,6 +22,9 @@ else
     exit 1
 fi
 
+# TO DO: Let test cases have names instead of numbers. We can still
+#        do the numbering ourselves (also needed to control the source
+#        ports)
 __TESTCASE__ () {
     sleep 1 # Not nice. But to make sure previous output has been written.
 
@@ -46,6 +49,7 @@ rm -f $TEST_OUT_ALL
 touch $TEST_OUT_ALL
 
 # Start the server to test with, possibly using valgrind
+# TO DO: Make valgrind use also configurable.
 `which valgrind >/dev/null && echo "valgrind -q --error-exitcode=99 --track-origins=yes"` \
     ./t/test_cmdserv \
     <  /dev/null \
@@ -75,6 +79,10 @@ done
 # TO DO: Add time outs for all connections to server, so we do not hang after
 #        a server crash.
 # TO DO: Check for exit codes of test programs and report them as test failures.
+# TO DO: netcat's -q option is not supported on many systems: "after EOF on
+#        stdin, wait the specified number of seconds and then quit. If seconds
+#        is negative, wait forever." One of the reasons we should switch to our
+#        own tool.
 
 __TESTCASE__ 1
 
@@ -102,6 +110,8 @@ __TESTCASE__ 4
 printf "value get\r\nparse This is a \"nice command!\"\r\nserver shutdown\r\n" \
     | $NETCAT -p $SOURCE_PORT -q5 $CMDSERV_HOST $CMDSERV_PORT \
     >> t/test_cmdserv.conn
+
+# TO DO: Add more test cases based on gcov output.
 
 # TO DO: Abort after a short timeout, but continue with diffs
 wait $SERVER_PID || exit $?
