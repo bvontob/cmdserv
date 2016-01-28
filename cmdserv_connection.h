@@ -535,6 +535,21 @@ time_t cmdserv_connection_time_idle(cmdserv_connection* connection);
 
 
 /**
+ * Retrieve the currently configured client inactivity timeout for
+ * this connection.
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object for which to retrieve the
+ *     client timeout configuration.
+ *
+ * @return Seconds after which the client will be disconnected without
+ *     activity.
+ */
+time_t cmdserv_connection_client_timeout(cmdserv_connection* connection);
+
+
+/**
  * Retrieve connection time.
  *
  * @param connection

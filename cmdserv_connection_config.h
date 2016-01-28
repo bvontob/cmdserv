@@ -152,6 +152,20 @@ struct cmdserv_connection_config {
    * to NULL if you don't need that.
    */
   void *log_object;
+
+  /**
+   * A client will be automatically disconnected after this many
+   * seconds of inactivity.
+   *
+   * A value of zero disables the timeout (the default).
+   *
+   * Note that client inactivity is only checked for once per call to
+   * cmdserv_sleep().  Depending on the timeout chosen there (if it's
+   * more than one second and the call is not interrupted by e.g. a
+   * signal), it might actually take longer for the inactivity to be
+   * detected.
+   */
+  time_t client_timeout;
 };
 
 

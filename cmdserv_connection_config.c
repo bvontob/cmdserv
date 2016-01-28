@@ -14,5 +14,6 @@ struct cmdserv_connection_config cmdserv_connection_config_get_defaults() {
     .close_object  = NULL,
     .log_handler   = &cmdserv_logger_stderr,
     .log_object    = NULL,
+    .client_timeout= 0,
   };
 }

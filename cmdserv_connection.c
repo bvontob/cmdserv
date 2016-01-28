@@ -132,6 +132,7 @@ struct cmdserv_connection {
 
   time_t time_connect;            /**< time of client connection      */
   time_t time_last;               /**< time of last client activity   */
+  time_t client_timeout;          /**< inactivity timeout config      */
 
   ssize_t writebuf_size;          /**< maximum size of write buffer   */
   char *writebuf;                 /**< buffer for snprintf() strings  */
@@ -189,6 +190,10 @@ unsigned long long int cmdserv_connection_id(cmdserv_connection* self) {
 
 time_t cmdserv_connection_time_idle(cmdserv_connection* self) {
   return time(NULL) - self->time_last;
+}
+
+time_t cmdserv_connection_client_timeout(cmdserv_connection* self) {
+  return self->client_timeout;
 }
 
 time_t cmdserv_connection_time_connected(cmdserv_connection* self) {
@@ -459,6 +464,7 @@ cmdserv_connection
     .clientport    = { '\0' },
     .time_connect  = time(NULL),
     .time_last     = time(NULL),
+    .client_timeout= config->client_timeout,
     .writebuf_size = 1024,
     .readbuf_size  = config->readbuf_size,
     .buflen        = 0,

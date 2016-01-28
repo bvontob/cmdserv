@@ -45,9 +45,9 @@ int main(int argc, char** argv) {
 
     /*
      * For the test cases: Try to get a stable order on close
-     * operations, by checking that the file handle is realy closed,
-     * and trying to yield in poor man's way in between. Otherwise the
-     * chances are too high, that the cmdserv gets multiple close
+     * operations, by checking that the file handle is really closed,
+     * and trying to yield (in a poor man's way) in between. Otherwise
+     * the chances are too high, that the cmdserv gets multiple close
      * operations at once and works through them in a different order.
      */
     while (fcntl(fd[conns], F_GETFD) != -1)
