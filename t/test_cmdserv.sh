@@ -9,6 +9,8 @@ TEST_OUT_STDOUT=t/test_cmdserv.stdout
 
 TEST_OUT_ALL="$TEST_OUT_CLIENT $TEST_OUT_STDERR $TEST_OUT_STDOUT"
 
+STATUS=0
+
 # TO DO: Instead of using netcat/nc, we should use our own tool based
 #        on clientlib.h/.c
 if which netcat >/dev/null 2>&1
@@ -123,10 +125,16 @@ printf "value get\r\nparse This is a \"nice command!\"\r\nserver shutdown\r\n" \
 # TO DO: Abort after a short timeout, but continue with diffs
 wait $SERVER_PID || exit $?
 
-# TO DO: Remember exit code, but do not exit
-diff -u t/test_cmdserv.conn.exp   t/test_cmdserv.conn   || exit $?
-diff -u t/test_cmdserv.stderr.exp t/test_cmdserv.stderr || exit $?
-diff -u t/test_cmdserv.stdout.exp t/test_cmdserv.stdout || exit $?
+for OUTFILE in test_cmdserv.conn test_cmdserv.stderr test_cmdserv.stdout
+do
+    diff -u t/$OUTFILE.exp t/$OUTFILE
+    DIFFSTATUS=$?
+    if [ $DIFFSTATUS -eq 0 ]
+    then
+        rm t/$OUTFILE
+    else
+        STATUS=$DIFFSTATUS
+    fi
+done
 
-# TO DO: Delete files selectively (only those that are okay)
-rm -f t/test_cmdserv.stdout t/test_cmdserv.stderr t/test_cmdserv.conn
+exit $STATUS
