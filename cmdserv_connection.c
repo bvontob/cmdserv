@@ -457,6 +457,7 @@ cmdserv_connection
                            struct cmdserv_connection_config* config,
                            enum cmdserv_close_reason close_reason) {
   cmdserv_connection* self;
+  int saverrno = 0;
 
   if ((self = malloc(sizeof(struct cmdserv_connection))) == NULL)
     return NULL;
@@ -488,25 +489,32 @@ cmdserv_connection
     .log_object    = config->log_object
   };
 
-  if ((self->argv = calloc(self->argc_max + 1, sizeof(char*))) == NULL)
+  if ((self->argv = calloc(self->argc_max + 1, sizeof(char*))) == NULL) {
+    saverrno = errno;
     goto CMDSERV_CONNECTION_ABORT;
+  }
   self->argv[0] = NULL;
 
-  if ((self->buf = calloc(self->readbuf_size, sizeof(char))) == NULL)
+  if ((self->buf = calloc(self->readbuf_size, sizeof(char))) == NULL) {
+    saverrno = errno;
     goto CMDSERV_CONNECTION_ABORT;
+  }
 
-  if ((self->writebuf = calloc(self->writebuf_size, sizeof(char))) == NULL)
+  if ((self->writebuf = calloc(self->writebuf_size, sizeof(char))) == NULL) {
+    saverrno = errno;
     goto CMDSERV_CONNECTION_ABORT;
+  }
 
   self->fd = accept(listener_fd,
                     (struct sockaddr *)&self->clientaddr,
                     &self->clientaddrlen);
 
   if (self->fd == -1) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+    saverrno = errno;
+    if (saverrno == EAGAIN || saverrno == EWOULDBLOCK || saverrno == EINTR)
       goto CMDSERV_CONNECTION_ABORT;
     cmdserv_connection_log(self, CMDSERV_ERR,
-                           "accept() error: %s", strerror(errno));
+                           "accept() error: %s", strerror(saverrno));
     goto CMDSERV_CONNECTION_ABORT;
   }
 
@@ -558,15 +566,17 @@ cmdserv_connection
     int fdflags = fcntl(self->fd, F_GETFL, 0);
     if (fdflags == -1
         || fcntl(self->fd, F_SETFL, fdflags | O_NONBLOCK) == -1) {
+      saverrno = errno;
       cmdserv_connection_log(self, CMDSERV_ERR,
-                             "fcntl() error: %s", strerror(errno));
+                             "fcntl() error: %s", strerror(saverrno));
       goto CMDSERV_CONNECTION_ABORT;
     }
   }
 
   if (SETSOCKOPT_NOSIGPIPE_UNLESS_MSG_NOSIGNAL(self->fd)) {
+    saverrno = errno;
     cmdserv_connection_log(self, CMDSERV_ERR,
-                           "setsockopt() error: %s", strerror(errno));
+                           "setsockopt() error: %s", strerror(saverrno));
     goto CMDSERV_CONNECTION_ABORT;
   }
 
@@ -581,6 +591,7 @@ cmdserv_connection
 
  CMDSERV_CONNECTION_ABORT:
   cmdserv_connection_free(self);
+  errno = saverrno;
   return NULL;
 }
 

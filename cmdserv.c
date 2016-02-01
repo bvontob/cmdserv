@@ -161,6 +161,7 @@ void cmdserv_shutdown(cmdserv* self) {
 
 cmdserv* cmdserv_start(struct cmdserv_config config) {
   cmdserv* self;
+  int saverrno = 0;
 
   struct sockaddr_in6 servaddr = {
     .sin6_family = AF_INET6,
@@ -171,8 +172,10 @@ cmdserv* cmdserv_start(struct cmdserv_config config) {
   if ((self = malloc(sizeof(struct cmdserv)
                      + (sizeof(cmdserv_connection*)
                         * config.connections_max)))
-      == NULL)
+      == NULL) {
+    saverrno = errno;
     goto CMDSERV_ABORT;
+  }
 
   *self = (struct cmdserv){
     .listener          = -1,
@@ -201,16 +204,22 @@ cmdserv* cmdserv_start(struct cmdserv_config config) {
     self->conn[slot_id] = NULL;
   FD_ZERO(&self->fds);
 
-  if ((self->listener = socket(AF_INET6, SOCK_STREAM, 0)) == -1)
+  if ((self->listener = socket(AF_INET6, SOCK_STREAM, 0)) == -1) {
+    saverrno = errno;
+    cmdserv_log(self, CMDSERV_ERR, "socket() error: %s", strerror(saverrno));
     goto CMDSERV_ABORT;
+  }
 
   FD_SET(self->listener, &self->fds);
   self->fdmax = self->listener;
 
   if (setsockopt(self->listener, SOL_SOCKET,
                  SO_REUSEADDR, &(int){1}, sizeof(int))
-      == -1)
+      == -1) {
+    saverrno = errno;
+    cmdserv_log(self, CMDSERV_ERR, "setsockopt() error: %s", strerror(saverrno));
     goto CMDSERV_ABORT;
+  }
 
   /*
    * Setting O_NONBLOCK on the listener. From the NOTES section of
@@ -228,18 +237,27 @@ cmdserv* cmdserv_start(struct cmdserv_config config) {
   {
     int fdflags = fcntl(self->listener, F_GETFL, 0);
     if (fdflags == -1
-        || fcntl(self->listener, F_SETFL, fdflags | O_NONBLOCK) == -1)
+        || fcntl(self->listener, F_SETFL, fdflags | O_NONBLOCK) == -1) {
+      saverrno = errno;
+      cmdserv_log(self, CMDSERV_ERR, "fcntl() error: %s", strerror(saverrno));
       goto CMDSERV_ABORT;
+    }
   }
 
   if (bind(self->listener,
            (struct sockaddr *)&servaddr, sizeof(servaddr))
-      == -1)
+      == -1) {
+    saverrno = errno;
+    cmdserv_log(self, CMDSERV_ERR, "bind() error: %s", strerror(saverrno));
     goto CMDSERV_ABORT;
+  }
 
   if (listen(self->listener, config.connections_backlog)
-      == -1)
+      == -1) {
+    saverrno = errno;
+    cmdserv_log(self, CMDSERV_ERR, "listen() error: %s", strerror(saverrno));
     goto CMDSERV_ABORT;
+  }
 
   cmdserv_log(self, CMDSERV_INFO,
               "server ready for connections on port %u",
@@ -249,6 +267,7 @@ cmdserv* cmdserv_start(struct cmdserv_config config) {
 
  CMDSERV_ABORT:
   cmdserv_shutdown(self);
+  errno = saverrno;
   return NULL;
 }
 
@@ -292,8 +311,9 @@ static void cmdserv_accept(cmdserv* self) {
                                             : CMDSERV_NO_CLOSE))
       == NULL) {
     cmdserv_log(self, CMDSERV_ERR,
-                "cmdserv_connection_create(#%llu) failed",
-                self->conns);
+                "cmdserv_connection_create(#%llu) failed: %s",
+                self->conns,
+                strerror(errno));
     return;
   }
 
