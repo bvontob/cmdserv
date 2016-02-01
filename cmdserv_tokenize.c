@@ -4,13 +4,30 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-/* Start a new token if the previous character was a space */
+/**
+ * Start a new token if the previous character was a space.
+ */
 #define NEW_TOKEN_AFTER_SPACE() do {            \
     if (space) {                                \
       argv[argc++] = str + dst;                 \
       space = false;                            \
     }                                           \
   } while (0)
+
+/**
+ * Wrapping isspace() for use on char.
+ *
+ * While most libc implementations of ctype, and most environments
+ * (compiler/OS), do work with a char handed in to isspace(), and
+ * other character classification functions (or, often actually
+ * macros), it's not according to the specs, and compilation actually
+ * failed on some systems (e.g. some BSDs).  From CTYPE(3) on NetBSD
+ * 7.0: "Values of type char or signed char must first be cast to
+ * unsigned char, to ensure that the values are within the correct
+ * range.  The result should then be cast to int to avoid warnings
+ * from some compilers."
+ */
+#define ISSPACE_CHAR(c) isspace((int)(unsigned char)c)
 
 int cmdserv_tokenize(char *str, char **argv, int argc_max) {
   int argc   = 0;
@@ -42,7 +59,7 @@ int cmdserv_tokenize(char *str, char **argv, int argc_max) {
 
     } else {                         /*-- NORMAL SEQUENCE -----------*/
 
-      if (isspace(str[src])) {       /*     Space separating tokens  */
+      if (ISSPACE_CHAR(str[src])) {  /*     Space separating tokens  */
         space = true;
         str[dst++] = '\0';
 
