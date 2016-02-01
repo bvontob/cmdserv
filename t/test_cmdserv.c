@@ -48,15 +48,30 @@
 static bool shutdown = false;
 static cmdserv* server = NULL;
 
-void banner(void *open_object,
+void banner(void *object,
             cmdserv_connection* connection,
             enum cmdserv_close_reason close_reason) {
-  (void)open_object; /* UNUSED */
+  (void)object; /* UNUSED */
 
-  if (close_reason == CMDSERV_NO_CLOSE)
+  switch (close_reason) {
+  case CMDSERV_NO_CLOSE:
     cmdserv_connection_send_status(connection, 101, "Ready");
-  else
+    break;
+  case CMDSERV_APPLICATION_CLOSE:
+    cmdserv_connection_send_status(connection, 200, "Bye");
+    break;
+  case CMDSERV_CLIENT_TIMEOUT:
+    cmdserv_connection_send_status(connection, close_reason, "Client timeout");
+    break;
+  case CMDSERV_SERVER_SHUTDOWN:
+    cmdserv_connection_send_status(connection, close_reason, "Server shutdown");
+    break;
+  case CMDSERV_SERVER_TOO_MANY_CONNECTIONS:
     cmdserv_connection_send_status(connection, 500, "Busy");
+    break;
+  default:
+    cmdserv_connection_send_status(connection, close_reason, "Disconnect");
+  }
 }
 
 void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **argv) {
@@ -77,6 +92,8 @@ void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **
     cmdserv_connection_println(connection, "      Store string on server (globally).");
     cmdserv_connection_println(connection, "  value get");
     cmdserv_connection_println(connection, "      Retrieve global string from server.");
+    cmdserv_connection_println(connection, "  timeout [client timeout in seconds]");
+    cmdserv_connection_println(connection, "      Check or change timeout setting.");
     cmdserv_connection_println(connection, "  server status");
     cmdserv_connection_println(connection, "      Display server status.");
     cmdserv_connection_println(connection, "  parse [ARGS...]");
@@ -94,7 +111,6 @@ void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **
              || strcmp("disconnect", argv[0]) == 0) {
     if (argc != 1)
       goto WRONG_ARGUMENTS;
-    cmdserv_connection_send_status(connection, 200, "OK");
     cmdserv_connection_close(connection, CMDSERV_APPLICATION_CLOSE);
 
   } else if (strcmp("value", argv[0]) == 0) { /* value get/set */
@@ -115,6 +131,20 @@ void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **
     cmdserv_connection_println(connection, value);
     cmdserv_connection_send_status(connection, 200, "OK");
     
+  } else if (strcmp("timeout", argv[0]) == 0) { /* timeout */
+    if (argc > 2)
+      goto WRONG_ARGUMENTS;
+    else if (argc == 2)
+      cmdserv_connection_set_client_timeout(connection, atol(argv[1]));
+
+    if (cmdserv_connection_client_timeout(connection))
+      cmdserv_connection_printf(connection, "Client timeout is %jds",
+                                (intmax_t)cmdserv_connection_client_timeout(connection));
+    else
+      cmdserv_connection_printf(connection, "Client timeout is disabled");
+    cmdserv_connection_println(connection, "");
+    cmdserv_connection_send_status(connection, 200, "OK");
+
   } else if (strcmp("parse", argv[0]) == 0) { /* parse */
     cmdserv_connection_send_status(connection, 200,
                                    "%s",
@@ -162,10 +192,11 @@ int main(void) {
 
   struct cmdserv_config config = cmdserv_config_get_defaults();
 
-  config.port                           = 12346;
-  config.connections_max                = 4;
-  config.connection_config.cmd_handler  = &handler;
-  config.connection_config.open_handler = &banner;
+  config.port                            = 12346;
+  config.connections_max                 = 4;
+  config.connection_config.cmd_handler   = &handler;
+  config.connection_config.open_handler  = &banner;
+  config.connection_config.close_handler = &banner;
 
   server = cmdserv_start(config);
 

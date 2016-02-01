@@ -6,7 +6,7 @@ testcase
 200 OK
 testcase
 200 OK
-200 OK
+200 Bye
 -- TESTCASE 2 --
 101 Ready
 101 Ready
@@ -21,9 +21,17 @@ testcase
 500 Busy
 500 Busy
 -- TESTCASE 3 --
+101 Ready
+Client timeout is disabled
+200 OK
+Client timeout is 1s
+200 OK
+492 Client timeout
 -- TESTCASE 4 --
+-- TESTCASE 5 --
 101 Ready
 testcase
 200 OK
 200 "parse" "This" "is" "a" "nice command!"
 200 OK
+590 Server shutdown

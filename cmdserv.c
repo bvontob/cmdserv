@@ -344,9 +344,18 @@ void cmdserv_sleep(cmdserv* self, struct timeval *timeout) {
   FD_ZERO(&read_fds);
   FD_SET(self->listener, &read_fds);
 
-  for (int slot_id = 0; slot_id < self->connections_max; slot_id++)
-    if (self->conn[slot_id] != NULL)
-      FD_SET(cmdserv_connection_fd(self->conn[slot_id]), &read_fds);
+  for (int slot_id = 0; slot_id < self->connections_max; slot_id++) {
+    if (self->conn[slot_id] != NULL) {
+      time_t client_timeout = cmdserv_connection_client_timeout(self->conn[slot_id]);
+      if (client_timeout > 0
+          && cmdserv_connection_time_idle(self->conn[slot_id]) > client_timeout) {
+        cmdserv_connection_log(self->conn[slot_id], CMDSERV_INFO, "client timeout");
+        cmdserv_connection_close(self->conn[slot_id], CMDSERV_CLIENT_TIMEOUT);
+      } else {
+        FD_SET(cmdserv_connection_fd(self->conn[slot_id]), &read_fds);
+      }
+    }
+  }
 
   if (select(self->fdmax + 1, &read_fds, NULL, NULL, &timeout_copy)
       == -1) {

@@ -101,11 +101,18 @@ done >> t/test_cmdserv.conn
 
 __TESTCASE__ 3
 
+printf "timeout\r\ntimeout 1\r\n" \
+    | $NETCAT -p $SOURCE_PORT -q5 $CMDSERV_HOST $CMDSERV_PORT \
+    >> t/test_cmdserv.conn
+
+
+__TESTCASE__ 4
+
 printf "value get\r\server status\r\nvalue get\r\n" \
     | t/close-no-read $SOURCE_PORT $CMDSERV_HOST $CMDSERV_PORT
 
 
-__TESTCASE__ 4
+__TESTCASE__ 5
 
 printf "value get\r\nparse This is a \"nice command!\"\r\nserver shutdown\r\n" \
     | $NETCAT -p $SOURCE_PORT -q5 $CMDSERV_HOST $CMDSERV_PORT \

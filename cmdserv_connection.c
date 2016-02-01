@@ -196,6 +196,10 @@ time_t cmdserv_connection_client_timeout(cmdserv_connection* self) {
   return self->client_timeout;
 }
 
+void cmdserv_connection_set_client_timeout(cmdserv_connection* self, time_t timeout) {
+  self->client_timeout = timeout > 0 ? timeout : 0;
+}
+
 time_t cmdserv_connection_time_connected(cmdserv_connection* self) {
   return time(NULL) - self->time_connect;
 }
