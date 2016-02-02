@@ -557,7 +557,9 @@ time_t cmdserv_connection_client_timeout(cmdserv_connection* connection);
  *     The cmdserv connection object for which to retrieve the
  *     client timeout configuration.
  *
- * @param Seconds after which the client will be disconnected without
+ * @param timeout
+ *
+ *     Seconds after which the client will be disconnected without
  *     activity. A value of 0 disables the timeout.
  */
 void cmdserv_connection_set_client_timeout(cmdserv_connection* connection, time_t timeout);
