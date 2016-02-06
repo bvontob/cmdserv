@@ -1,0 +1,61 @@
+#ifndef EXPAND_INTERCEPTOR
+#define EXPAND_INTERCEPTOR(...)
+
+#include <stdlib.h>     /* calloc(), malloc(), realloc() */
+#include <sys/types.h>  /* accept(), bind(), listen(), recv(), setsockopt(), socket() */
+#include <sys/socket.h> /* accept(), bind(), listen(), recv(), setsockopt(), socket() */
+
+#endif /* EXPAND_INTERCEPTOR */
+
+/*
+ * Add the following:
+ * fcntl (varargs)
+ * select (unclear headers)
+ * asprintf (varargs)
+ * getnameinfo (7 args)
+ */
+
+EXPAND_INTERCEPTOR(void *, calloc,
+                   size_t, nmemb,
+                   size_t, size)
+
+EXPAND_INTERCEPTOR(void *, malloc,
+                   size_t, size)
+
+EXPAND_INTERCEPTOR(void *, realloc,
+                   void *, ptr,
+                   size_t, size)
+
+EXPAND_INTERCEPTOR(int, socket,
+                   int, domain,
+                   int, type,
+                   int, protocol)
+
+EXPAND_INTERCEPTOR(ssize_t, recv,
+                   int, sockfd,
+                   void *, buf,
+                   size_t, len,
+                   int, flags)
+
+EXPAND_INTERCEPTOR(int, setsockopt,
+                   int, sockfd,
+                   int, level,
+                   int, optname,
+                   const void *, optval,
+                   socklen_t, optlen)
+
+EXPAND_INTERCEPTOR(int, bind,
+                   int, sockfd,
+                   const struct sockaddr *, addr,
+                   socklen_t, addrlen)
+
+EXPAND_INTERCEPTOR(int, listen,
+                   int, sockfd,
+                   int, backlog)
+
+EXPAND_INTERCEPTOR(int, accept,
+                   int, sockfd,
+                   struct sockaddr *, addr,
+                   socklen_t *, addrlen)
+
+#undef EXPAND_INTERCEPTOR

@@ -4,7 +4,8 @@ OBJS   := cmdserv_tokenize.o          \
 	  cmdserv_config.o            \
 	  cmdserv_connection_config.o \
 	  cmdserv_connection.o        \
-	  cmdserv.o
+	  cmdserv.o                   \
+	  interceptors.o
 CFLAGS := -Wall -Wextra -pedantic -Werror \
 	  -Wwrite-strings -Wshadow -Wundef -Wformat \
 	  -Wcast-align -Wcast-qual -Wfloat-equal \

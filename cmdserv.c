@@ -19,6 +19,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "intercept.h"
 #include "cmdserv.h"
 #include "cmdserv_helpers.h"
 
