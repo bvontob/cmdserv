@@ -5,6 +5,8 @@
 #define CONCAT2(a, b) a ## b
 #define CONCAT(a, b) CONCAT2(a, b)
 
+#define INTERCEPT_FUNC(func_name) CONCAT(INTERCEPTOR_PREFIX, func_name)
+
 #define GET_TYPES_1(t1, v1)                     \
   t1 v1
 #define GET_TYPES_2(t1, v1, t2, v2)             \
@@ -57,11 +59,3 @@
                                GET_VARS_2, UNBALANCED,                 \
                                GET_VARS_1, UNBALANCED                  \
                                )(__VA_ARGS__)
-
-enum intercepted_function {
-  INTERCEPTED_INVALID = -1,
-#define EXPAND_INTERCEPTOR(return_type, function_name, ...)     \
-  INTERCEPTED_ ## function_name,
-#include "interceptors.def"
-  INTERCEPTED_COUNT
-};

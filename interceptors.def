@@ -5,7 +5,7 @@
 #include <sys/types.h>  /* accept(), bind(), listen(), recv(), setsockopt(), socket() */
 #include <sys/socket.h> /* accept(), bind(), listen(), recv(), setsockopt(), socket() */
 
-#endif /* EXPAND_INTERCEPTOR */
+#endif /* ifndef EXPAND_INTERCEPTOR */
 
 /*
  * Add the following:

@@ -1,7 +1,9 @@
-#include "interceptors.h"
 #include <errno.h>
 
+#include "interceptors.h"
 #include "interceptors.def" /* To get the headers for intercepted functions */
+#undef INTERCEPT /* To suppress the intercept macros... */
+#include "intercept.h" /* ...while importing declarations and enum */
 
 struct interception {
   int fail_after;
@@ -15,7 +17,7 @@ struct interception {
 
 static struct interception failures[INTERCEPTED_COUNT];
 
-void intercept_i_after(enum intercepted_function func, int after, int fail_errno, int retval) {
+void intercept_i_after(enum intercept_funcs func, int after, int fail_errno, int retval) {
   if (func >= 0 && func < INTERCEPTED_COUNT)
     failures[func] = (struct interception){
       .fail_after = after,
@@ -24,7 +26,7 @@ void intercept_i_after(enum intercepted_function func, int after, int fail_errno
     };
 }
 
-void intercept_ptr_after(enum intercepted_function func, int after, int fail_errno, void *retval) {
+void intercept_ptr_after(enum intercept_funcs func, int after, int fail_errno, void *retval) {
   if (func >= 0 && func < INTERCEPTED_COUNT)
     failures[func] = (struct interception){
       .fail_after = after,
@@ -33,7 +35,7 @@ void intercept_ptr_after(enum intercepted_function func, int after, int fail_err
     };
 }
 
-void intercept_sst_after(enum intercepted_function func, int after, int fail_errno, ssize_t retval) {
+void intercept_sst_after(enum intercept_funcs func, int after, int fail_errno, ssize_t retval) {
   if (func >= 0 && func < INTERCEPTED_COUNT)
     failures[func] = (struct interception){
       .fail_after = after,
@@ -42,13 +44,13 @@ void intercept_sst_after(enum intercepted_function func, int after, int fail_err
     };
 }
 
-#define EXPAND_INTERCEPTOR(return_type, function_name, ...)             \
-  return_type CONCAT(INTERCEPTOR_PREFIX, function_name)(GET_TYPES(__VA_ARGS__)) { \
-    if (failures[INTERCEPTED_ ## function_name].fail_after--)           \
-      return function_name(GET_VARS(__VA_ARGS__));                      \
+#define EXPAND_INTERCEPTOR(ret_type, func_name, ...)                    \
+  ret_type INTERCEPT_FUNC(func_name)(GET_TYPES(__VA_ARGS__)) {          \
+    if (failures[INTERCEPTED_ ## func_name].fail_after--)               \
+      return func_name(GET_VARS(__VA_ARGS__));                          \
                                                                         \
-    failures[INTERCEPTED_ ## function_name].fail_after = 0;             \
-    errno = failures[INTERCEPTED_ ## function_name].fail_errno;         \
-    return (*(return_type *)&(failures[INTERCEPTED_ ## function_name].fail_retval)); \
+    failures[INTERCEPTED_ ## func_name].fail_after = 0;                 \
+    errno = failures[INTERCEPTED_ ## func_name].fail_errno;             \
+    return (*(ret_type *)&(failures[INTERCEPTED_ ## func_name].fail_retval)); \
   }
 #include "interceptors.def"

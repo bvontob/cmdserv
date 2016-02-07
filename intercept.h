@@ -3,20 +3,28 @@
 
 #include "interceptors.h"
 
+enum intercept_funcs {
+  INTERCEPTED_INVALID = -1,
+#define EXPAND_INTERCEPTOR(ret_type, func_name, ...)     \
+  INTERCEPTED_ ## func_name,
+#include "interceptors.def"
+  INTERCEPTED_COUNT
+};
+
 #ifdef INTERCEPT
-#define calloc(...)     CONCAT(INTERCEPTOR_PREFIX, calloc)(__VA_ARGS__)
-#define malloc(...)     CONCAT(INTERCEPTOR_PREFIX, malloc)(__VA_ARGS__)
-#define realloc(...)    CONCAT(INTERCEPTOR_PREFIX, realloc)(__VA_ARGS__)
-#define socket(...)     CONCAT(INTERCEPTOR_PREFIX, socket)(__VA_ARGS__)
-#define recv(...)       CONCAT(INTERCEPTOR_PREFIX, recv)(__VA_ARGS__)
-#define setsockopt(...) CONCAT(INTERCEPTOR_PREFIX, setsockopt)(__VA_ARGS__)
-#define listen(...)     CONCAT(INTERCEPTOR_PREFIX, listen)(__VA_ARGS__)
-#define bind(...)       CONCAT(INTERCEPTOR_PREFIX, bind)(__VA_ARGS__)
-#define accept(...)     CONCAT(INTERCEPTOR_PREFIX, accept)(__VA_ARGS__)
+#define calloc(...)     INTERCEPT_FUNC(calloc)(__VA_ARGS__)
+#define malloc(...)     INTERCEPT_FUNC(malloc)(__VA_ARGS__)
+#define realloc(...)    INTERCEPT_FUNC(realloc)(__VA_ARGS__)
+#define socket(...)     INTERCEPT_FUNC(socket)(__VA_ARGS__)
+#define recv(...)       INTERCEPT_FUNC(recv)(__VA_ARGS__)
+#define setsockopt(...) INTERCEPT_FUNC(setsockopt)(__VA_ARGS__)
+#define listen(...)     INTERCEPT_FUNC(listen)(__VA_ARGS__)
+#define bind(...)       INTERCEPT_FUNC(bind)(__VA_ARGS__)
+#define accept(...)     INTERCEPT_FUNC(accept)(__VA_ARGS__)
 #endif /* INTERCEPT */
 
-#define EXPAND_INTERCEPTOR(return_type, function_name, ...)     \
-  return_type CONCAT(INTERCEPTOR_PREFIX, function_name)(GET_TYPES(__VA_ARGS__));
+#define EXPAND_INTERCEPTOR(ret_type, func_name, ...)     \
+  ret_type INTERCEPT_FUNC(func_name)(GET_TYPES(__VA_ARGS__));
 #include "interceptors.def"
 
 #endif /* INTERCEPT_H */
