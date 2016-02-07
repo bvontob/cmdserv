@@ -1,18 +1,22 @@
 #ifndef EXPAND_INTERCEPTOR
 #define EXPAND_INTERCEPTOR(...)
 
+#include <netdb.h>      /* getnameinfo() */
 #include <stdlib.h>     /* calloc(), malloc(), realloc() */
+#include <sys/select.h> /* select() */
+#include <sys/socket.h> /* accept(), bind(), getnameinfo(), listen(), recv(), setsockopt(), socket() */
 #include <sys/types.h>  /* accept(), bind(), listen(), recv(), setsockopt(), socket() */
-#include <sys/socket.h> /* accept(), bind(), listen(), recv(), setsockopt(), socket() */
 
 #endif /* ifndef EXPAND_INTERCEPTOR */
 
+
 /*
- * Add the following:
- * fcntl (varargs)
- * select (unclear headers)
- * asprintf (varargs)
- * getnameinfo (7 args)
+ * Note that we also need to intercept the following variadic functions for
+ * full test coverage once we implement/verify support for stdarg intercept:
+ *
+ *   fcntl()
+ *
+ *   asprintf()
  */
 
 EXPAND_INTERCEPTOR(void *, calloc,
@@ -25,6 +29,13 @@ EXPAND_INTERCEPTOR(void *, malloc,
 EXPAND_INTERCEPTOR(void *, realloc,
                    void *, ptr,
                    size_t, size)
+
+EXPAND_INTERCEPTOR(int, select,
+                   int, nfds,
+                   fd_set *, readfds,
+                   fd_set *, writefds,
+                   fd_set *, exceptfds,
+                   struct timeval *, timeout)
 
 EXPAND_INTERCEPTOR(int, socket,
                    int, domain,
@@ -57,5 +68,14 @@ EXPAND_INTERCEPTOR(int, accept,
                    int, sockfd,
                    struct sockaddr *, addr,
                    socklen_t *, addrlen)
+
+EXPAND_INTERCEPTOR(int, getnameinfo,
+                   const struct sockaddr *, sa,
+                   socklen_t, salen,
+                   char *, host,
+                   size_t, hostlen,
+                   char *, serv,
+                   size_t, servlen,
+                   int, flags)
 
 #undef EXPAND_INTERCEPTOR
