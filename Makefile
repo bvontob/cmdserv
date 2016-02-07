@@ -73,6 +73,7 @@ doc:
 test: check
 tests: check
 
+check: CFLAGS += -DINTERCEPT
 check: $(TESTS)
 	`which valgrind >/dev/null && echo "valgrind -q --error-exitcode=99"` \
 		./t/test_cmdserv_tokenize \

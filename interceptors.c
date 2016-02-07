@@ -44,7 +44,7 @@ void intercept_sst_after(enum intercept_funcs func, int after, int fail_errno, s
     };
 }
 
-#define EXPAND_INTERCEPTOR(ret_type, func_name, ...)                    \
+#define EXPAND_INTERCEPTOR(ret_type, func_name, derr, dret, ...)        \
   ret_type INTERCEPT_FUNC(func_name)(GET_TYPES(__VA_ARGS__)) {          \
     if (failures[INTERCEPTED_ ## func_name].fail_after--)               \
       return func_name(GET_VARS(__VA_ARGS__));                          \

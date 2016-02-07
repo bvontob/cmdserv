@@ -5,7 +5,7 @@
 
 enum intercept_funcs {
   INTERCEPTED_INVALID = -1,
-#define EXPAND_INTERCEPTOR(ret_type, func_name, ...)     \
+#define EXPAND_INTERCEPTOR(ret_type, func_name, derr, dret, ...)        \
   INTERCEPTED_ ## func_name,
 #include "interceptors.def"
   INTERCEPTED_COUNT
@@ -25,7 +25,7 @@ enum intercept_funcs {
 #define getnameinfo(...)   INTERCEPT_FUNC(getnameinfo)(__VA_ARGS__)
 #endif /* INTERCEPT */
 
-#define EXPAND_INTERCEPTOR(ret_type, func_name, ...)     \
+#define EXPAND_INTERCEPTOR(ret_type, func_name, derr, dret, ...)        \
   ret_type INTERCEPT_FUNC(func_name)(GET_TYPES(__VA_ARGS__));
 #include "interceptors.def"
 
