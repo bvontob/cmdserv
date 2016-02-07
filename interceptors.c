@@ -44,13 +44,15 @@ void intercept_sst_after(enum intercept_funcs func, int after, int fail_errno, s
     };
 }
 
+#define INTERCEPTION(func_name) failures[INTERCEPT_IDX(func_name)]
 #define EXPAND_INTERCEPTOR(ret_type, func_name, derr, dret, ...)        \
   ret_type INTERCEPT_FUNC(func_name)(GET_TYPES(__VA_ARGS__)) {          \
-    if (failures[INTERCEPTED_ ## func_name].fail_after--)               \
+    if (INTERCEPTION(func_name).fail_after--)                           \
       return func_name(GET_VARS(__VA_ARGS__));                          \
                                                                         \
-    failures[INTERCEPTED_ ## func_name].fail_after = 0;                 \
-    errno = failures[INTERCEPTED_ ## func_name].fail_errno;             \
-    return (*(ret_type *)&(failures[INTERCEPTED_ ## func_name].fail_retval)); \
+    INTERCEPTION(func_name).fail_after = 0;                             \
+    errno = INTERCEPTION(func_name).fail_errno;                         \
+    return (*(ret_type *)&(INTERCEPTION(func_name).fail_retval));       \
   }
 #include "interceptors.def"
+#undef INTERCEPTION

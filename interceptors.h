@@ -6,6 +6,7 @@
 #define CONCAT(a, b) CONCAT2(a, b)
 
 #define INTERCEPT_FUNC(func_name) CONCAT(INTERCEPTOR_PREFIX, func_name)
+#define INTERCEPT_IDX(func_name) CONCAT(INTERCEPTED_, func_name)
 
 #define GET_TYPES_1(t1, v1)                     \
   t1 v1
