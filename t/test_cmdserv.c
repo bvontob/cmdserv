@@ -45,7 +45,7 @@
 
 #include "../cmdserv.h"
 
-static bool shutdown = false;
+static bool shutdownreq = false;
 static cmdserv* server = NULL;
 
 void banner(void *object,
@@ -168,7 +168,7 @@ void handler(void *cmd_object, cmdserv_connection* connection, int argc, char **
       }
 
     } else if (strcmp("shutdown", argv[1]) == 0) {
-      shutdown = true;
+      shutdownreq = true;
       cmdserv_connection_send_status(connection, 200, "OK");
     }
 
@@ -203,7 +203,7 @@ int main(void) {
   if (server == NULL)
     err(EXIT_FAILURE, "failed cmdserv_start()");
 
-  while (!shutdown)
+  while (!shutdownreq)
     cmdserv_sleep(server, &timeout);
 
   cmdserv_shutdown(server);
