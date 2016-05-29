@@ -79,6 +79,7 @@ cmdserv_log(cmdserv* self, enum cmdserv_logseverity severity,
 char *cmdserv_server_status(cmdserv* self,
                             const char* lt,
                             unsigned long long int mark_conn) {
+  char *client_info = NULL;
   char *idle = NULL;
   char *str = strdup("");
   char *tmp; /* Keep pointer around for free() */
@@ -114,6 +115,7 @@ char *cmdserv_server_status(cmdserv* self,
     if (self->conn[slot_id] == NULL)
       continue;
 
+    client_info = cmdserv_connection_client(self->conn[slot_id]);
     idle = strdup(cmdserv_duration_str(0,
         cmdserv_connection_time_idle(self->conn[slot_id])));
     tmp = str;
@@ -127,12 +129,15 @@ char *cmdserv_server_status(cmdserv* self,
                  cmdserv_connection_fd(self->conn[slot_id]),
                  cmdserv_duration_str(0, cmdserv_connection_time_connected(self->conn[slot_id])),
                  idle,
-                 cmdserv_connection_client(self->conn[slot_id]),
+                 client_info,
                  lt)
         == -1) {
+      free(client_info);
+      free(idle);
       free(tmp);
       return NULL;
     }
+    free(client_info);
     free(idle);
     free(tmp);
   }
