@@ -23,7 +23,6 @@
 #include "cmdserv_helpers.h"
 #include "cmdserv_connection.h"
 #include "cmdserv_connection_config.h"
-#include "cmdserv_tokenize.h"
 
 
 #ifdef MSG_NOSIGNAL
@@ -152,7 +151,8 @@ struct cmdserv_connection {
   enum cmdserv_close_reason close_reason;
 
   enum cmdserv_lineterm lineterm; /**< setting for line termination   */
-  bool rawmode;                   /**< skip the tokenizer             */
+
+  int (*tokenizer)(char *str, char **argv, int argc_max);
 
   void (*cmd_handler)(void *cmd_object,
                       cmdserv_connection* connection,
@@ -431,12 +431,12 @@ void cmdserv_connection_read(cmdserv_connection* self) {
 }
 
 static void cmdserv_connection_handle_line(cmdserv_connection *self) {
-  if (self->rawmode) {
+  if (self->tokenizer == NULL) {
     self->argv[0] = self->buf;
     self->argv[1] = NULL;
     self->argc = 1;
   } else {
-    self->argc = cmdserv_tokenize(self->buf, self->argv, self->argc_max + 1);
+    self->argc = self->tokenizer(self->buf, self->argv, self->argc_max + 1);
   }
 
   if (self->argc == -1) {
@@ -479,7 +479,7 @@ cmdserv_connection
     .state         = CMDSERV_CONNECTION_STATE_DEFAULT,
     .close_reason  = CMDSERV_NO_CLOSE,
     .lineterm      = CMDSERV_LINETERM_CRLF_OR_LF,
-    .rawmode       = false,
+    .tokenizer     = config->tokenizer,
     .cmd_handler   = config->cmd_handler,
     .cmd_object    = config->cmd_object,
     .open_handler  = config->open_handler,

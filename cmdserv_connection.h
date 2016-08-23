@@ -39,8 +39,19 @@
 #include <time.h>
 
 #include "cmdserv_logger.h"
+#include "cmdserv_tokenize.h"
 struct cmdserv_connection_config;
 
+/**
+ * Constant to disable the built-in tokenizer (lines will be treated
+ * as one single token instead of being parsed).
+ */
+#define CMDSERV_TOKENIZER_NONE    (NULL)
+
+/**
+ * Constant to select the built-in shell-like default tokenizer.
+ */
+#define CMDSERV_TOKENIZER_DEFAULT (&cmdserv_tokenize)
 
 /**
  * Reasons on why a connection was closed.

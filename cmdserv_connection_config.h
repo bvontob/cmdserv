@@ -78,6 +78,15 @@ struct cmdserv_connection_config {
   unsigned int argc_max;
 
   /**
+   * The tokenizer used to parse command lines.
+   *
+   * See cmdserv_tokenize() for an example and documentation, if you
+   * want to roll your own tokenizer.  That's also the default used by
+   * cmdserv.
+   */
+  int (*tokenizer)(char *str, char **argv, int argc_max);
+
+  /**
    * The connection object will do a callback to this handler
    * whenever a command from the client has been parsed and is ready
    * to execute.
@@ -172,9 +181,10 @@ struct cmdserv_connection_config {
 /**
  * The default configuration for a cmdserv_connection.
  *
- * All the handlers (except for the log handler, that we direct to
- * STDERR) and handler objects are unset in the defaults.  You need to
- * provide at least a cmd_handler to create a useful connection.
+ * All the handlers (except for the log handler that we direct to
+ * STDERR, and the default shell-like tokenizer) and handler objects are unset in
+ * the defaults.  You need to provide at least a cmd_handler to create
+ * a useful connection.
  *
  * @return The values to prefill your cmdserv_connection_config
  *     struct.
