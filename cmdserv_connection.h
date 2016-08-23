@@ -29,6 +29,15 @@
  *     Boston, MA 02110-1301, USA.
  *
  * @see cmdserv.h cmdserv_logger.h
+ *
+ * @todo
+ *
+ *     Implement a callback for built-in errors (currently "Too many
+ *     arguments", and "Command too long", both using status code 400,
+ *     see use of cmdserv_connection_send_status() within
+ *     cmdserv_connection.c), so users can use different error
+ *     messages and status codes, or maybe completely different
+ *     reactions to these errors (such as closing the connection).
  */
 
 #ifndef CMDSERV_CONNECTION_H
