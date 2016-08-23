@@ -152,7 +152,7 @@ struct cmdserv_connection {
 
   enum cmdserv_lineterm lineterm; /**< setting for line termination   */
 
-  int (*tokenizer)(char *str, char **argv, int argc_max);
+  cmdserv_tokenizer tokenizer;
 
   void (*cmd_handler)(void *cmd_object,
                       cmdserv_connection* connection,
@@ -203,6 +203,13 @@ void cmdserv_connection_set_client_timeout(cmdserv_connection* self, time_t time
 
 time_t cmdserv_connection_time_connected(cmdserv_connection* self) {
   return time(NULL) - self->time_connect;
+}
+
+cmdserv_tokenizer cmdserv_connection_tokenizer(cmdserv_connection* self,
+                                               cmdserv_tokenizer tokenizer) {
+  cmdserv_tokenizer old_tokenizer = self->tokenizer;
+  self->tokenizer = tokenizer;
+  return old_tokenizer;
 }
 
 char *cmdserv_connection_client(cmdserv_connection* self) {

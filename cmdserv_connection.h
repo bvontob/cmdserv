@@ -43,6 +43,11 @@
 struct cmdserv_connection_config;
 
 /**
+ * Type for a function pointer to a cmdserv tokenizer.
+ */
+typedef int (*cmdserv_tokenizer)(char *str, char **argv, int argc_max);
+
+/**
  * Constant to disable the built-in tokenizer (lines will be treated
  * as one single token instead of being parsed).
  */
@@ -50,6 +55,8 @@ struct cmdserv_connection_config;
 
 /**
  * Constant to select the built-in shell-like default tokenizer.
+ *
+ * @see cmdserv_tokenize()
  */
 #define CMDSERV_TOKENIZER_DEFAULT (&cmdserv_tokenize)
 
@@ -587,6 +594,28 @@ void cmdserv_connection_set_client_timeout(cmdserv_connection* connection, time_
  * @return Seconds since this connection was started.
  */
 time_t cmdserv_connection_time_connected(cmdserv_connection* connection);
+
+
+/**
+ * Set a new tokenizer to be used with this connection (and retrieve
+ * the current one).
+ *
+ * @see CMDSERV_TOKENIZER_NONE CMDSERV_TOKENIZER_DEFAULT
+ *     cmdserv_connection_config::tokenizer
+ *
+ * @param connection
+ *
+ *     The cmdserv connection object for which to set a new tokenizer.
+ *
+ * @param tokenizer
+ *
+ *     Function pointer to the new tokenizer to be used with this
+ *     connection.
+ *
+ * @return A function pointer to the previous tokenizer.
+ */
+cmdserv_tokenizer cmdserv_connection_tokenizer(cmdserv_connection* connection,
+                                               cmdserv_tokenizer tokenizer);
 
 
 /**

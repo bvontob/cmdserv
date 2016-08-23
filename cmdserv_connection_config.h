@@ -83,8 +83,13 @@ struct cmdserv_connection_config {
    * See cmdserv_tokenize() for an example and documentation, if you
    * want to roll your own tokenizer.  That's also the default used by
    * cmdserv.
+   *
+   * The tokenizer can also be changed after a connection has been
+   * established using cmdserv_connection_tokenizer().
+   *
+   * @see cmdserv_tokenize() cmdserv_connection_tokenizer()
    */
-  int (*tokenizer)(char *str, char **argv, int argc_max);
+  cmdserv_tokenizer tokenizer;
 
   /**
    * The connection object will do a callback to this handler
