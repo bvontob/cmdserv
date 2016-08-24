@@ -78,6 +78,14 @@ struct cmdserv_connection_config {
   unsigned int argc_max;
 
   /**
+   * Configuration for end-of-line character modes.
+   *
+   * @see CMDSERV_LINETERM_LF CMDSERV_LINETERM_CRLF_OR_LF
+   *     CMDSERV_LINETERM_CRLF
+   */
+  enum cmdserv_lineterm lineterm;
+
+  /**
    * The tokenizer used to parse command lines.
    *
    * See cmdserv_tokenize() for an example and documentation, if you

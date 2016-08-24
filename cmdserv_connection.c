@@ -485,7 +485,7 @@ cmdserv_connection
     .argc_max      = config->argc_max,
     .state         = CMDSERV_CONNECTION_STATE_DEFAULT,
     .close_reason  = CMDSERV_NO_CLOSE,
-    .lineterm      = CMDSERV_LINETERM_CRLF_OR_LF,
+    .lineterm      = config->lineterm,
     .tokenizer     = config->tokenizer,
     .cmd_handler   = config->cmd_handler,
     .cmd_object    = config->cmd_object,
