@@ -8,6 +8,7 @@ struct cmdserv_connection_config cmdserv_connection_config_get_defaults() {
     .argc_max      = 8,
     .lineterm      = CMDSERV_LINETERM_CRLF_OR_LF,
     .tokenizer     = CMDSERV_TOKENIZER_DEFAULT,
+    .forward_errors= false,
     .cmd_handler   = NULL,
     .cmd_object    = NULL,
     .open_handler  = NULL,

@@ -100,6 +100,26 @@ struct cmdserv_connection_config {
   cmdserv_tokenizer tokenizer;
 
   /**
+   * Decide if errors should be propagated from the tokenizer stage to
+   * your command handler.
+   *
+   * Using the default configuration, the cmdserv library handles
+   * errors happening throughout the tokenizer stage (overflowing the
+   * maximum configured number of command arguments or the maximum
+   * line length) for you by returning a default error message and a
+   * status code of 400 to the client.
+   *
+   * If you set this to true on the other hand, no action will be
+   * taken and your cmd_handler() will be called with argc set to a
+   * negative value (one of the defined error constants) so you can
+   * take a different action if your protocol demands it.
+   *
+   * @see CMDSERV_ERR_TOO_MANY_ARGS CMDSERV_ERR_LINE_TOO_LONG
+   *     cmd_handler()
+   */
+  bool forward_errors;
+
+  /**
    * The connection object will do a callback to this handler
    * whenever a command from the client has been parsed and is ready
    * to execute.

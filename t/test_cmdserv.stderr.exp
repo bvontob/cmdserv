@@ -45,10 +45,14 @@ cmdserv <info>: #14 client timeout
 cmdserv <info>: #14 closing
 -- TESTCASE 4 --
 cmdserv <info>: #15 connected from [::1]:40001
-cmdserv <info>: #15 client disconnect
+cmdserv <warning>: #15 too many arguments in command
 cmdserv <info>: #15 closing
 -- TESTCASE 5 --
 cmdserv <info>: #16 connected from [::1]:50001
-cmdserv <info>: server shutdown initialized
+cmdserv <info>: #16 client disconnect
 cmdserv <info>: #16 closing
+-- TESTCASE 6 --
+cmdserv <info>: #17 connected from [::1]:60001
+cmdserv <info>: server shutdown initialized
+cmdserv <info>: #17 closing
 cmdserv <info>: server shutdown reached

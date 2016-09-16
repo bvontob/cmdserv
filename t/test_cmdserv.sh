@@ -110,11 +110,18 @@ printf "timeout\r\ntimeout 1\r\n" \
 
 __TESTCASE__ 4
 
+printf "a b c d e f g h i j k l m n o p q r s t u v w x y z\r\nexit\r\n" \
+    | $NETCAT -p $SOURCE_PORT -q5 $CMDSERV_HOST $CMDSERV_PORT \
+    >> t/test_cmdserv.conn
+
+
+__TESTCASE__ 5
+
 printf "value get\r\server status\r\nvalue get\r\n" \
     | t/close-no-read $SOURCE_PORT $CMDSERV_HOST $CMDSERV_PORT
 
 
-__TESTCASE__ 5
+__TESTCASE__ 6
 
 printf "value get\r\nparse This is a \"nice command!\"\r\nserver shutdown\r\n" \
     | $NETCAT -p $SOURCE_PORT -q5 $CMDSERV_HOST $CMDSERV_PORT \

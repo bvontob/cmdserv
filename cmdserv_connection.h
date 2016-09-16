@@ -44,6 +44,7 @@
 #define CMDSERV_CONNECTION_H
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <time.h>
 
@@ -51,10 +52,12 @@
 #include "cmdserv_tokenize.h"
 struct cmdserv_connection_config;
 
+
 /**
  * Type for a function pointer to a cmdserv tokenizer.
  */
 typedef int (*cmdserv_tokenizer)(char *str, char **argv, int argc_max);
+
 
 /**
  * Constant to disable the built-in tokenizer (lines will be treated
@@ -68,6 +71,18 @@ typedef int (*cmdserv_tokenizer)(char *str, char **argv, int argc_max);
  * @see cmdserv_tokenize()
  */
 #define CMDSERV_TOKENIZER_DEFAULT (&cmdserv_tokenize)
+
+
+/**
+ *
+ */
+#define CMDSERV_ERR_TOO_MANY_ARGS (-1)
+
+/**
+ *
+ */
+#define CMDSERV_ERR_LINE_TOO_LONG (-2)
+
 
 /**
  * Reasons on why a connection was closed.

@@ -8,7 +8,6 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -153,6 +152,8 @@ struct cmdserv_connection {
   enum cmdserv_lineterm lineterm; /**< setting for line termination   */
 
   cmdserv_tokenizer tokenizer;
+
+  bool forward_errors;            /**< from tokenizer to cmd_handler  */
 
   void (*cmd_handler)(void *cmd_object,
                       cmdserv_connection* connection,
@@ -400,25 +401,20 @@ void cmdserv_connection_read(cmdserv_connection* self) {
             || (self->lineterm == CMDSERV_LINETERM_CRLF
                 && i > 0 && self->buf[i - 1] == '\r'))) {
 
-      /* End of line found: Parse it -- unless overflow */
-      if (self->overflow) {
-        cmdserv_connection_send_status(self, 400, "Command too long");
-        self->overflow = false;
-      } else {
-        self->buf[i] = '\0';
-        if (self->lineterm == CMDSERV_LINETERM_CRLF
-            || (self->lineterm == CMDSERV_LINETERM_CRLF_OR_LF
-                && i > 0 && self->buf[i - 1] == '\r'))
-          self->buf[i - 1] = '\0';
+      /* End of line found: Parse it */
+      self->buf[i] = '\0';
+      if (self->lineterm == CMDSERV_LINETERM_CRLF
+          || (self->lineterm == CMDSERV_LINETERM_CRLF_OR_LF
+              && i > 0 && self->buf[i - 1] == '\r'))
+        self->buf[i - 1] = '\0';
+      
+      self->state = CMDSERV_CONNECTION_STATE_HANDLED;
+      cmdserv_connection_handle_line(self);
+      self->state = CMDSERV_CONNECTION_STATE_DEFAULT;
 
-        self->state = CMDSERV_CONNECTION_STATE_HANDLED;
-        cmdserv_connection_handle_line(self);
-        self->state = CMDSERV_CONNECTION_STATE_DEFAULT;
-
-        if (self->close_reason != CMDSERV_NO_CLOSE) {
-          cmdserv_connection_close(self, self->close_reason);
-          return;
-        }
+      if (self->close_reason != CMDSERV_NO_CLOSE) {
+        cmdserv_connection_close(self, self->close_reason);
+        return;
       }
 
       /* Move rest of buffer to beginning */
@@ -433,25 +429,38 @@ void cmdserv_connection_read(cmdserv_connection* self) {
   if (self->buflen == self->readbuf_size) {
     self->overflow = true;
     self->buflen   = 0;
-    cmdserv_connection_log(self, CMDSERV_WARNING, "command too long");
   }
 }
 
 static void cmdserv_connection_handle_line(cmdserv_connection *self) {
-  if (self->tokenizer == NULL) {
+  if (self->overflow) {
+    self->argv[0]  = NULL;
+    self->argc     = CMDSERV_ERR_LINE_TOO_LONG;
+    self->overflow = false;
+  } else if (self->tokenizer == NULL) {
     self->argv[0] = self->buf;
     self->argv[1] = NULL;
-    self->argc = 1;
+    self->argc    = 1;
   } else {
     self->argc = self->tokenizer(self->buf, self->argv, self->argc_max + 1);
   }
 
-  if (self->argc == -1) {
-    cmdserv_connection_log(self, CMDSERV_WARNING,
-                           "too many arguments in command");
-    cmdserv_connection_send_status(self, 400, "Too many arguments");
-  } else {
-    if (self->cmd_handler)
+  if (self->argc < 0 && !self->forward_errors) {
+    switch (self->argc) {
+    case CMDSERV_ERR_TOO_MANY_ARGS:
+      cmdserv_connection_log(self, CMDSERV_WARNING,
+                             "too many arguments in command");
+      cmdserv_connection_send_status(self, 400, "Too many arguments");
+      break;
+    case CMDSERV_ERR_LINE_TOO_LONG:
+      cmdserv_connection_log(self, CMDSERV_WARNING, "line too long");
+      cmdserv_connection_send_status(self, 400, "Line too long");
+      break;
+    default:
+      cmdserv_connection_log(self, CMDSERV_ERR, "invalid tokenizer error");
+      cmdserv_connection_send_status(self, 500, "Tokenizer error");
+    }
+  } else if (self->cmd_handler) {
       self->cmd_handler(self->cmd_object, self, self->argc, self->argv);
   }
 
@@ -487,6 +496,7 @@ cmdserv_connection
     .close_reason  = CMDSERV_NO_CLOSE,
     .lineterm      = config->lineterm,
     .tokenizer     = config->tokenizer,
+    .forward_errors= config->forward_errors,
     .cmd_handler   = config->cmd_handler,
     .cmd_object    = config->cmd_object,
     .open_handler  = config->open_handler,
@@ -639,7 +649,7 @@ static void *cmdserv_connection_resize_writebuf(cmdserv_connection* self,
     return NULL;
 
   cmdserv_connection_log(self, CMDSERV_INFO,
-                         "Increased writebuf_size from %ld to %ld octets",
+                         "increased writebuf_size from %ld to %ld octets",
                          (long)self->writebuf_size, (long)new_size);
 
   self->writebuf_size = new_size;

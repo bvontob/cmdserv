@@ -28,7 +28,11 @@ Client timeout is 1s
 200 OK
 492 Client timeout
 -- TESTCASE 4 --
+101 Ready
+400 Too many arguments
+200 Bye
 -- TESTCASE 5 --
+-- TESTCASE 6 --
 101 Ready
 testcase
 200 OK
