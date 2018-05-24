@@ -42,7 +42,7 @@ default: $(OBJS)
 %.o: %.c
 	$(CC) $(FORCE_FLAGS) $(CFLAGS) -c -o $@ $<
 
-all: clean test doc
+all: clean test docs
 
 gcov: FORCE_FLAGS += -fprofile-arcs -ftest-coverage -O0
 gcov: clean $(OBJS) test
@@ -67,7 +67,10 @@ t/close-no-read: t/close-no-read.c t/clientlib.o
 	$(CC) $(FORCE_FLAGS) $(CFLAGS) $< t/clientlib.o -o $@
 
 .PHONY: doc
-doc:
+doc: docs
+
+.PHONY: docs
+docs:
 	which doxygen && doxygen || true
 
 test: check

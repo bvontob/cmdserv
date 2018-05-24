@@ -8,7 +8,7 @@ GENERATE_HTML          = YES
 GENERATE_MAN           = NO
 GENERATE_LATEX         = NO
 
-OUTPUT_DIRECTORY       = doc/
+OUTPUT_DIRECTORY       = docs/
 HTML_OUTPUT            = ./
 
 OUTPUT_LANGUAGE        = English
