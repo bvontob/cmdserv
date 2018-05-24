@@ -1,3 +1,4 @@
+*.o
 too-many-connections
 close-no-read
 test_cmdserv_tokenize
