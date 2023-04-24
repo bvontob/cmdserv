@@ -2,6 +2,7 @@
 #define _GNU_SOURCE
 #define _DARWIN_C_SOURCE
 #define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <assert.h>
 #include <errno.h>
